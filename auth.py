@@ -30,7 +30,8 @@ def get_authenticator():
 
 def login():
     authenticator = get_authenticator()
-    name, auth_status, username = authenticator.login("Login", "main")
+    # Use 'sidebar' or 'main' (try both if one fails)
+    name, auth_status, username = authenticator.login("Login", "sidebar")
     return authenticator, name, auth_status, username
 
 def logout(authenticator):
