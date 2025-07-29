@@ -32,7 +32,11 @@ def get_authenticator():
         "abcdef",  # your secret key here
         cookie_expiry_days=30,
     )
-
+def hash_passwords(password_list):
+    """Returns a list of bcrypt-hashed passwords from a list of plaintext ones."""
+    hasher = stauth.Hasher(password_list)
+    return hasher.generate()
+    
 def login():
     authenticator = get_authenticator()
     # Use 'main' or 'sidebar' location for now, to avoid the unrendered error
