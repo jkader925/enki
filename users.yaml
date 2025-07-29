@@ -1,13 +1,6 @@
 credentials:
-  usernames:
-    demo_user:
-      email: demo@example.com
-      name: Demo User
-      password: hashed_password_here
-      api_keys:
-        openai: ""
-        anthropic: ""
+  usernames: {}
 cookie:
   expiry_days: 30
-  key: some_signature_key
+  key: enki_cookie_secret
   name: enki_auth
