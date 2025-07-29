@@ -3,9 +3,27 @@ import streamlit_authenticator as stauth
 from create_users import load_users, save_users, hash_password
 from litellm import completion
 import os
+import subprocess
+
+def get_package_version(package_name):
+    try:
+        result = subprocess.run(
+            ["pip", "show", package_name],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=True
+        )
+        for line in result.stdout.splitlines():
+            if line.startswith("Version:"):
+                return line.split(":", 1)[1].strip()
+    except Exception as e:
+        return f"Error getting version: {e}"
+    return "Version not found"
+
+st.write("streamlit-authenticator version:", get_package_version("streamlit-authenticator"))
 
 
-st.write("streamlit-authenticator version:", stauth.__version__)
 st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
 
 # Load users config
