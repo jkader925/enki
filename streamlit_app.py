@@ -190,4 +190,4 @@ else:
 
     if st.button("Register new user?"):
         st.session_state.register = True
-        st.experimental_rerun()
+        st.rerun()
