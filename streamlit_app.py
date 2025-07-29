@@ -56,8 +56,8 @@ else:
         config['cookie']['expiry_days']
     )
     
-    name, auth_status = authenticator.login("main")
-
+    auth_status = authenticator.login("main")
+    
     if auth_status is False:
         st.error("Username/password is incorrect")
     elif auth_status is None:
