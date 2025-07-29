@@ -30,7 +30,7 @@ if not st.session_state.get("authentication_status"):
     if not st.session_state.show_register:
         # Show login form
         try:
-            authenticator.login('Login', 'main')
+            authenticator.login()
         except Exception as e:
             st.error(f"Login error: {e}")
         
