@@ -11,6 +11,3 @@ cookie:
   expiry_days: 30
   key: some_signature_key
   name: enki_auth
-preauthorized:
-  emails:
-    - demo@example.com
