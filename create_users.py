@@ -1,8 +1,8 @@
-# user_utils.py
 import yaml
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from pathlib import Path
+import bcrypt
 
 USERS_FILE = Path("users.yaml")
 
@@ -20,4 +20,9 @@ def save_users(config):
         yaml.dump(config, f)
 
 def hash_password(password):
-    return stauth.Hasher([password]).generate()[0]
+    # Method 1: Try the direct function approach
+    try:
+        return stauth.Hasher([password]).generate()[0]
+    except TypeError:
+        # Method 2: Fall back to bcrypt directly
+        return bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
