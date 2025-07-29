@@ -2,45 +2,42 @@ import yaml
 import streamlit as st
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
-from streamlit_authenticator.utilities import Hasher
-from litellm import completion
-import os
+from streamlit_authenticator.utilities import (CredentialsError,
+                                               ForgotError,
+                                               Hasher,
+                                               LoginError,
+                                               RegisterError,
+                                               ResetError,
+                                               UpdateError)
 
-# --- Configuration Setup ---
-st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
+# Loading config file
+with open('config.yaml', 'r', encoding='utf-8') as file:
+    config = yaml.load(file, Loader=SafeLoader)
 
-# Load config file
-@st.cache_resource
-def load_config():
-    try:
-        with open('config.yaml', 'r', encoding='utf-8') as file:
-            return yaml.load(file, Loader=SafeLoader)
-    except FileNotFoundError:
-        # Create default config if file doesn't exist
-        default_config = {
-            'credentials': {
-                'usernames': {
-                    'demo': {
-                        'email': 'demo@enki.com',
-                        'name': 'Demo User',
-                        'password': Hasher(['demo123']).generate()[0],
-                        'api_keys': {'openai': '', 'anthropic': ''}
-                    }
-                }
-            },
-            'cookie': {
-                'name': 'enki_auth',
-                'key': 'your_cookie_key_here',
-                'expiry_days': 30
-            }
-        }
-        with open('config.yaml', 'w', encoding='utf-8') as file:
-            yaml.dump(default_config, file, default_flow_style=False)
-        return default_config
+#st.image('logo.png')
 
-config = load_config()
+col1, col2 = st.columns(2)
+with col1:
+  st.metric('Streamlit Version', '1.43.1')
+with col2:
+  st.metric('Streamlit Authenticator Version', '0.4.2')
 
-# --- Authentication Setup ---
+st.code(f"""
+Credentials:
+
+First name: {config['credentials']['usernames']['jsmith']['first_name']}
+Last name: {config['credentials']['usernames']['jsmith']['last_name']}
+Username: jsmith
+Password: {'abc' if 'pp' not in config['credentials']['usernames']['jsmith'].keys() else config['credentials']['usernames']['jsmith']['pp']}
+
+First name: {config['credentials']['usernames']['rbriggs']['first_name']}
+Last name: {config['credentials']['usernames']['rbriggs']['last_name']}
+Username: rbriggs
+Password: {'def' if 'pp' not in config['credentials']['usernames']['rbriggs'].keys() else config['credentials']['usernames']['rbriggs']['pp']}
+"""
+)
+
+# Creating the authenticator object
 authenticator = stauth.Authenticate(
     config['credentials'],
     config['cookie']['name'],
@@ -48,133 +45,94 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# --- Main App Structure ---
-def main():
-    # Authentication widget
-    authenticator.login('Login', 'main')
-    
-    if st.session_state.get("authentication_status"):
-        show_authenticated_interface()
-    elif st.session_state.get("authentication_status") is False:
-        st.error('Username/password is incorrect')
-    elif st.session_state.get("authentication_status") is None:
-        show_guest_interface()
+# authenticator = stauth.Authenticate(
+#     '../config.yaml'
+# )
 
-def show_authenticated_interface():
-    # User info and logout
-    authenticator.logout('Logout', 'sidebar')
-    st.sidebar.success(f"Logged in as {st.session_state['name']}")
-    
-    # API Key Management
-    manage_api_keys()
-    
-    # Chat Interface
-    show_chat_interface()
+# Creating a login widget
+try:
+    authenticator.login()
+except LoginError as e:
+    st.error(e)
 
-def show_guest_interface():
-    st.title("💬 Enki Chatbot with LiteLLM")
-    st.warning('Please login to access the chatbot')
-    
-    # Registration Section
+if st.session_state["authentication_status"]:
+    st.write('___')
+    authenticator.logout()
+    st.write(f'Welcome *{st.session_state["name"]}*')
+    st.title('Some content')    
+    st.write('___')
+elif st.session_state["authentication_status"] is False:
+    st.error('Username/password is incorrect')
+elif st.session_state["authentication_status"] is None:
+    st.warning('Please enter your username and password')
+
+st.subheader('Guest login')
+
+# Creating a guest login button
+try:
+    authenticator.experimental_guest_login('Login with Google', provider='google',
+                                            oauth2=st.secrets["oauth2"])
+    authenticator.experimental_guest_login('Login with Microsoft', provider='microsoft',
+                                            oauth2=st.secrets["oauth2"])
+except LoginError as e:
+    st.error(e)
+
+# Creating a password reset widget
+if st.session_state["authentication_status"]:
     try:
-        if authenticator.register_user('Register user', preauthorization=False):
-            st.success('User registered successfully')
-            # Update config file
-            with open('config.yaml', 'w', encoding='utf-8') as file:
-                yaml.dump(config, file, default_flow_style=False)
-    except Exception as e:
+        if authenticator.reset_password(st.session_state["username"]):
+            st.success('Password modified successfully')
+            config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
+    except ResetError as e:
+        st.error(e)
+    except CredentialsError as e:
+        st.error(e)
+    st.write('_If you use the password reset widget please revert the password to what it was before once you are done._')
+
+# Creating a new user registration widget
+try:
+    (email_of_registered_user,
+     username_of_registered_user,
+     name_of_registered_user) = authenticator.register_user()
+    if email_of_registered_user:
+        st.success('User registered successfully')
+except RegisterError as e:
+    st.error(e)
+
+# Creating a forgot password widget
+try:
+    (username_of_forgotten_password,
+     email_of_forgotten_password,
+     new_random_password) = authenticator.forgot_password()
+    if username_of_forgotten_password:
+        st.success(f"New password **'{new_random_password}'** to be sent to user securely")
+        config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
+        # Random password to be transferred to the user securely
+    elif not username_of_forgotten_password:
+        st.error('Username not found')
+except ForgotError as e:
+    st.error(e)
+
+# Creating a forgot username widget
+try:
+    (username_of_forgotten_username,
+     email_of_forgotten_username) = authenticator.forgot_username()
+    if username_of_forgotten_username:
+        st.success(f"Username **'{username_of_forgotten_username}'** to be sent to user securely")
+        # Username to be transferred to the user securely
+    elif not username_of_forgotten_username:
+        st.error('Email not found')
+except ForgotError as e:
+    st.error(e)
+
+# Creating an update user details widget
+if st.session_state["authentication_status"]:
+    try:
+        if authenticator.update_user_details(st.session_state["username"]):
+            st.success('Entries updated successfully')
+    except UpdateError as e:
         st.error(e)
 
-def manage_api_keys():
-    """Sidebar for API key management"""
-    st.sidebar.header("🔑 API Key Settings")
-    username = st.session_state['username']
-    user_data = config['credentials']['usernames'][username]
-    
-    if 'api_keys' not in user_data:
-        user_data['api_keys'] = {}
-    
-    for key_type in ["openai", "anthropic"]:
-        current_key = user_data['api_keys'].get(key_type, "")
-        new_key = st.sidebar.text_input(
-            f"{key_type.capitalize()} API Key",
-            value=current_key,
-            type="password"
-        )
-        user_data['api_keys'][key_type] = new_key
-    
-    if st.sidebar.button("Save API Keys"):
-        with open('config.yaml', 'w', encoding='utf-8') as file:
-            yaml.dump(config, file, default_flow_style=False)
-        st.sidebar.success("API keys saved!")
-
-def show_chat_interface():
-    """Main chatbot interface"""
-    st.header("Chat with Enki")
-    
-    # Model Selection
-    provider = st.selectbox(
-        "Choose LLM Provider",
-        options=["OpenAI", "Anthropic Claude"],
-        index=0
-    )
-    
-    # Model options
-    model_options = {
-        "OpenAI": [
-            "gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo",
-            "gpt-4", "gpt-4-vision-preview"
-        ],
-        "Anthropic Claude": [
-            "claude-3-opus-20240229",
-            "claude-3-haiku-20240307",
-        ]
-    }
-    
-    model = st.selectbox(
-        "Choose model",
-        options=model_options[provider]
-    )
-    
-    # Get API key
-    username = st.session_state['username']
-    api_key = config['credentials']['usernames'][username]['api_keys'].get(
-        "openai" if provider == "OpenAI" else "anthropic", ""
-    )
-    
-    if not api_key:
-        st.warning(f"Please enter your {provider} API key in the sidebar")
-        st.stop()
-    
-    # Chat messages
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    
-    # Display previous messages
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
-    
-    # Handle new input
-    if prompt := st.chat_input("Type your message here..."):
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-        
-        # Call LLM
-        with st.chat_message("assistant"):
-            response = completion(
-                model=model,
-                messages=[{"role": m["role"], "content": m["content"]} 
-                         for m in st.session_state.messages],
-                stream=True,
-                api_key=api_key
-            )
-            response_text = st.write_stream(response)
-        
-        st.session_state.messages.append(
-            {"role": "assistant", "content": response_text}
-        )
-
-if __name__ == "__main__":
-    main()
+# Saving config file
+with open('config.yaml', 'w', encoding='utf-8') as file:
+    yaml.dump(config, file, default_flow_style=False)
