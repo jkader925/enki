@@ -25,25 +25,21 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# Create columns for login and register buttons
-col1, col2 = st.columns([3, 1])
-with col1:
-    # Creating a login widget
-    try:
-        authenticator.login()
-    except Exception as e:
-        st.error(f"Login error: {e}")
-
-with col2:
-    # Only show register button if not logged in
-    if not st.session_state.get("authentication_status"):
+# Show either login or registration form based on state
+if not st.session_state.get("authentication_status"):
+    if not st.session_state.show_register:
+        # Show login form
+        try:
+            authenticator.login('Login', 'main')
+        except Exception as e:
+            st.error(f"Login error: {e}")
+        
+        # Register button below login form
         if st.button("Register New User"):
-            st.session_state.show_register = not st.session_state.show_register
+            st.session_state.show_register = True
             st.rerun()
-
-# Show registration form only if button was clicked and not logged in
-if st.session_state.show_register and not st.session_state.get("authentication_status"):
-    try:
+    else:
+        # Show registration form
         st.subheader("Register New User")
         with st.form("register_form"):
             # Create registration fields manually
@@ -53,7 +49,13 @@ if st.session_state.show_register and not st.session_state.get("authentication_s
             register_password = st.text_input("Password", type="password")
             register_password_confirm = st.text_input("Confirm Password", type="password")
             
-            submitted = st.form_submit_button("Register")
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                submitted = st.form_submit_button("Register")
+            with col2:
+                if st.form_submit_button("Back to Login"):
+                    st.session_state.show_register = False
+                    st.rerun()
             
             if submitted:
                 if register_password != register_password_confirm:
@@ -78,11 +80,9 @@ if st.session_state.show_register and not st.session_state.get("authentication_s
                     st.success('User registered successfully! Please login.')
                     st.session_state.show_register = False
                     st.rerun()
-    except Exception as e:
-        st.error(f"Registration error: {str(e)}")
 
 # After login content
-if st.session_state["authentication_status"]:
+if st.session_state.get("authentication_status"):
     st.write(f'Welcome *{st.session_state["name"]}*')  
     authenticator.logout("Logout", "sidebar")
     
@@ -129,9 +129,9 @@ if st.session_state["authentication_status"]:
         st.warning("Please select a specific model (not just a category).")
         st.stop()
 
-elif st.session_state["authentication_status"] is False:
+elif st.session_state.get("authentication_status") is False:
     st.error('Username/password is incorrect')
-elif st.session_state["authentication_status"] is None:
+elif st.session_state.get("authentication_status") is None and not st.session_state.show_register:
     st.warning('Please enter your username and password')
 
 # Save config file after any changes
