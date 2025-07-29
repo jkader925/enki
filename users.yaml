@@ -1,6 +1,0 @@
-credentials:
-  usernames: {}
-cookie:
-  expiry_days: 30
-  key: enki_cookie_secret
-  name: enki_auth
