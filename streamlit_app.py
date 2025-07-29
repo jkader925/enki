@@ -204,18 +204,22 @@ if st.session_state.get("authentication_status"):
         # Prepare messages for API
         messages_for_api = []
         for msg in st.session_state.messages:
-            if msg.get("image"):
+            if is_vision_model and msg.get("image"):
+                # Only include image processing for vision models when image exists
                 messages_for_api.append({
                     "role": msg["role"],
                     "content": [
                         {"type": "text", "text": msg["content"]},
-                        {"type": "image_url", 
-                         "image_url": {
-                             "url": f"data:image/jpeg;base64,{base64.b64encode(msg['image']).decode('utf-8')}"
-                         }}
+                        {
+                            "type": "image_url",
+                            "image_url": {
+                                "url": f"data:image/jpeg;base64,{base64.b64encode(msg['image']).decode('utf-8')}"
+                            }
+                        }
                     ]
                 })
             else:
+                # Regular text message format
                 messages_for_api.append({
                     "role": msg["role"],
                     "content": msg["content"]
@@ -225,23 +229,12 @@ if st.session_state.get("authentication_status"):
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
-                    if is_vision_model and uploaded_image:
-                        # Special handling for vision models with images
-                        response = completion(
-                            model=model,
-                            messages=messages_for_api,
-                            api_key=api_key,
-                            stream=True
-                        )
-                    else:
-                        # Regular text completion
-                        response = completion(
-                            model=model,
-                            messages=[{"role": m["role"], "content": m["content"]} 
-                                     for m in st.session_state.messages],
-                            api_key=api_key,
-                            stream=True
-                        )
+                    response = completion(
+                        model=model,
+                        messages=messages_for_api,
+                        api_key=api_key,
+                        stream=True
+                    )
                     
                     # Create a placeholder for the streaming response
                     response_placeholder = st.empty()
