@@ -2,5 +2,5 @@ streamlit
 litellm
 openai
 anthropic
-streamlit_authenticator
-subprocess
+streamlit_authenticator==0.6.0
+PyYAML==6.0
