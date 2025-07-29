@@ -1,73 +1,72 @@
 import streamlit as st
-import litellm
+from litellm import completion
 
-# Supported models (OpenAI and Anthropic)
-MODELS = [
-    # OpenAI models
-    "gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo",
-    # Anthropic models
-    "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"
-]
+# --- Define model categories and models ---
+MODEL_CATEGORIES = {
+    "Chat Completion Models": [
+        "gpt-4.1",
+        "gpt-4.1-mini",
+        "gpt-4.1-nano",
+        "o4-mini",
+        "o3-mini",
+        "o3",
+        "o1-mini",
+        "o1-preview",
+        "gpt-4o-mini",
+        "gpt-4o-mini-2024-07-18",
+        "gpt-4o",
+        "gpt-4o-2024-08-06",
+        "gpt-4o-2024-05-13",
+        "gpt-4-turbo",
+        "gpt-4-turbo-preview",
+        "gpt-4-0125-preview",
+        "gpt-4-1106-preview",
+        "gpt-3.5-turbo-1106",
+        "gpt-3.5-turbo",
+        "gpt-3.5-turbo-0301",
+        "gpt-3.5-turbo-0613",
+        "gpt-3.5-turbo-16k",
+        "gpt-3.5-turbo-16k-0613",
+        "gpt-4",
+        "gpt-4-0314",
+        "gpt-4-0613",
+        "gpt-4-32k",
+        "gpt-4-32k-0314",
+        "gpt-4-32k-0613",
+    ],
+    "Vision Models": [
+        "gpt-4o",
+        "gpt-4-turbo",
+        "gpt-4-vision-preview",
+    ]
+}
 
-# App header
-st.title("💬 Enki Chatbot")
-st.write("Choose your model, enter your API key, and start chatting!")
+# --- Flatten all models for st.selectbox, prepending category ---
+MODEL_OPTIONS = []
+MODEL_MAP = {}
 
-# Model selector
-selected_model = st.selectbox("Choose a model", MODELS)
+for category, models in MODEL_CATEGORIES.items():
+    for model in models:
+        label = f"{category} → {model}"
+        MODEL_OPTIONS.append(label)
+        MODEL_MAP[label] = model
 
-# API key input
-api_key = st.text_input("Enter your API key", type="password")
+# --- Streamlit UI ---
+st.title("Enki 3D Chat Interface")
 
-if not api_key:
-    st.info("Please enter your API key to begin.", icon="🔐")
-else:
-    # Set LiteLLM config
-    if selected_model.startswith("claude"):
-        litellm.set_verbose = False
-        litellm.api_base = "https://api.anthropic.com"  # Optional, LiteLLM usually handles this
-        litellm.api_key = api_key
-        provider = "anthropic"
-    else:
-        litellm.api_key = api_key
-        provider = "openai"
+selected_label = st.selectbox("Choose a model:", MODEL_OPTIONS)
+selected_model = MODEL_MAP[selected_label]
 
-    # Initialize session state
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
+st.markdown(f"**Selected model:** `{selected_model}`")
 
-    # Display previous chat
-    for msg in st.session_state.messages:
-        with st.chat_message(msg["role"]):
-            st.markdown(msg["content"])
+user_input = st.text_area("Enter your prompt:")
 
-    # Prompt input
-    if prompt := st.chat_input("Say something..."):
-        # Append user message
-        st.session_state.messages.append({"role": "user", "content": prompt})
-        with st.chat_message("user"):
-            st.markdown(prompt)
-
-        # Generate model response
-        with st.chat_message("assistant"):
-            response_container = st.empty()
-            collected_chunks = []
-
-            try:
-                stream = litellm.completion(
-                    model=selected_model,
-                    messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
-                    stream=True
-                )
-
-                for chunk in stream:
-                    delta = chunk.get("choices", [{}])[0].get("delta", {})
-                    content = delta.get("content", "") or delta.get("text", "")
-                    collected_chunks.append(content)
-                    response_container.markdown("".join(collected_chunks))
-
-                final_response = "".join(collected_chunks)
-                st.session_state.messages.append({"role": "assistant", "content": final_response})
-
-            except Exception as e:
-                st.error(f"Error: {e}")
+if st.button("Submit") and user_input.strip():
+    with st.spinner("Generating response..."):
+        messages = [{"role": "user", "content": user_input}]
+        try:
+            response = completion(model=selected_model, messages=messages)
+            st.success("Response received!")
+            st.markdown(f"**Assistant:** {response['choices'][0]['message']['content']}")
+        except Exception as e:
+            st.error(f"Error: {e}")
