@@ -30,7 +30,7 @@ if not st.session_state.get("authentication_status"):
     if not st.session_state.show_register:
         # Show login form
         try:
-            authenticator.login()
+            authenticator.login('Login', 'main')
         except Exception as e:
             st.error(f"Login error: {e}")
         
@@ -40,22 +40,46 @@ if not st.session_state.get("authentication_status"):
             st.rerun()
     else:
         # Show registration form
-        try:
-            if authenticator.register_user():
-                st.success('User registered successfully! Please login.')
-                st.session_state.show_register = False
-                st.session_state.register_clicked = False
-                with open('config.yaml', 'w', encoding='utf-8') as file:
-                    yaml.dump(config, file, default_flow_style=False)
-                st.rerun()
+        st.subheader("Register New User")
+        with st.form("register_form"):
+            # Create registration fields manually
+            register_email = st.text_input("Email")
+            register_username = st.text_input("Username")
+            register_name = st.text_input("Name")
+            register_password = st.text_input("Password", type="password")
+            register_password_confirm = st.text_input("Confirm Password", type="password")
             
-            if st.button("Back to Login"):
-                st.session_state.show_register = False
-                st.session_state.register_clicked = False
-                st.rerun()
-                
-        except Exception as e:
-            st.error(f"Registration error: {e}")
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                submitted = st.form_submit_button("Register")
+            with col2:
+                if st.form_submit_button("Back to Login"):
+                    st.session_state.show_register = False
+                    st.rerun()
+            
+            if submitted:
+                if register_password != register_password_confirm:
+                    st.error("Passwords do not match")
+                elif not all([register_email, register_username, register_name, register_password]):
+                    st.error("Please fill all fields")
+                else:
+                    # Hash the password
+                    hashed_password = Hasher([register_password]).generate()[0]
+                    
+                    # Add new user to config
+                    config['credentials']['usernames'][register_username] = {
+                        'email': register_email,
+                        'name': register_name,
+                        'password': hashed_password
+                    }
+                    
+                    # Save config
+                    with open('config.yaml', 'w', encoding='utf-8') as file:
+                        yaml.dump(config, file, default_flow_style=False)
+                    
+                    st.success('User registered successfully! Please login.')
+                    st.session_state.show_register = False
+                    st.rerun()
 
 # After login content
 if st.session_state.get("authentication_status"):
