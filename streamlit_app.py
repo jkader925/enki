@@ -47,12 +47,12 @@ if not st.session_state.get("authentication_status"):
                 st.session_state.register_clicked = False
                 with open('config.yaml', 'w', encoding='utf-8') as file:
                     yaml.dump(config, file, default_flow_style=False)
-                st.experimental_rerun()
+                st.rerun()
             
             if st.button("Back to Login"):
                 st.session_state.show_register = False
                 st.session_state.register_clicked = False
-                st.experimental_rerun()
+                st.rerun()
                 
         except Exception as e:
             st.error(f"Registration error: {e}")
