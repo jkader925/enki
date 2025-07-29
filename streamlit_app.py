@@ -12,6 +12,7 @@ st.title("💬 Enki Chatbot with LiteLLM")
 # Initialize session state for registration form
 if 'show_register' not in st.session_state:
     st.session_state.show_register = False
+    st.session_state.registration_complete = False
 
 # Loading config file
 with open('config.yaml', 'r', encoding='utf-8') as file:
@@ -27,7 +28,7 @@ authenticator = stauth.Authenticate(
 
 # Show either login or registration form based on state
 if not st.session_state.get("authentication_status"):
-    if not st.session_state.show_register:
+    if not st.session_state.show_register and not st.session_state.registration_complete:
         # Show login form
         try:
             authenticator.login()
@@ -37,16 +38,20 @@ if not st.session_state.get("authentication_status"):
         # Register button below login form
         if st.button("Register New User"):
             st.session_state.show_register = True
+            st.session_state.registration_complete = False
             st.rerun()
-    else:
+            
+    elif st.session_state.show_register:
         # Show registration form using authenticator's built-in method
         try:
+            st.write("")  # Spacer
             if authenticator.register_user():
-                st.success('User registered successfully! Please login.')
+                st.session_state.registration_complete = True
                 st.session_state.show_register = False
                 # Update config file
                 with open('config.yaml', 'w', encoding='utf-8') as file:
                     yaml.dump(config, file, default_flow_style=False)
+                st.success('User registered successfully! Please login.')
                 st.rerun()
             
             # Add back button to return to login
