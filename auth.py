@@ -22,9 +22,9 @@ def save_users(users):
 def get_authenticator():
     users = load_users()
     return stauth.Authenticate(
-        users['usernames'],
+        users,  # Pass the whole dict with the 'usernames' key
         "enki_chat_app",
-        "abcdef",  # Change this cookie secret to your own secret key
+        "abcdef",  # your cookie secret
         cookie_expiry_days=30
     )
 
