@@ -11,10 +11,8 @@ import yaml
 st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
 
 # Load users config
-# config = load_users()
+config = load_users()
 
-with open('users.yaml') as file:
-    config = yaml.load(file, Loader=SafeLoader)
 
 st.title("💬 Enki Chatbot with LiteLLM")
 
