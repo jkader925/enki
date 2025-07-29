@@ -69,6 +69,7 @@ elif st.session_state["authentication_status"] is None:
 st.subheader('Guest login')
 
 # Creating a guest login button
+'''
 try:
     authenticator.experimental_guest_login('Login with Google', provider='google',
                                             oauth2=st.secrets["oauth2"])
@@ -76,7 +77,7 @@ try:
                                             oauth2=st.secrets["oauth2"])
 except LoginError as e:
     st.error(e)
-
+'''
 # Creating a password reset widget
 if st.session_state["authentication_status"]:
     try:
