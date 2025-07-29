@@ -16,11 +16,13 @@ with open('config.yaml', 'r', encoding='utf-8') as file:
 
 #st.image('logo.png')
 
+'''
 col1, col2 = st.columns(2)
 with col1:
   st.metric('Streamlit Version', '1.43.1')
 with col2:
   st.metric('Streamlit Authenticator Version', '0.4.2')
+'''
 
 st.code(f"""
 Credentials:
