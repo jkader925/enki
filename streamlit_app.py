@@ -4,6 +4,8 @@ from create_users import load_users, save_users, hash_password
 from litellm import completion
 import os
 
+
+st.write("streamlit-authenticator version:", stauth.__version__)
 st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
 
 # Load users config
