@@ -5,7 +5,7 @@ import os
 
 # Load login system
 authenticator, config = load_authenticator()
-name, auth_status = authenticator.login("main")
+auth_status = authenticator.login("main")
 
 if auth_status is False:
     st.error("Invalid username or password")
@@ -13,6 +13,10 @@ if auth_status is False:
 elif auth_status is None:
     st.warning("Please enter your username and password")
     st.stop()
+else:
+    # You are logged in
+    st.sidebar.success("You are logged in.")
+
 
 authenticator.logout("Logout", "sidebar")
 st.sidebar.success(f"Logged in as {name}")
