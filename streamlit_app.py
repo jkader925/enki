@@ -1,89 +1,73 @@
 import streamlit as st
-from litellm import completion
+import litellm
 
-# ---- Provider dropdown ----
-PROVIDERS = ["OpenAI", "Anthropic"]
-provider = st.selectbox("Select LLM Provider:", PROVIDERS)
-
-# ---- Define models by provider and category ----
-OPENAI_COMPLETION_MODELS = [
-    "gpt-4.1",
-    "gpt-4.1-mini",
-    "gpt-4.1-nano",
-    "o4-mini",
-    "o3-mini",
-    "o3",
-    "o1-mini",
-    "o1-preview",
-    "gpt-4o-mini",
-    "gpt-4o-mini-2024-07-18",
-    "gpt-4o",
-    "gpt-4o-2024-08-06",
-    "gpt-4o-2024-05-13",
-    "gpt-4-turbo",
-    "gpt-4-turbo-preview",
-    "gpt-4-0125-preview",
-    "gpt-4-1106-preview",
-    "gpt-3.5-turbo-1106",
-    "gpt-3.5-turbo",
-    "gpt-3.5-turbo-0301",
-    "gpt-3.5-turbo-0613",
-    "gpt-3.5-turbo-16k",
-    "gpt-3.5-turbo-16k-0613",
-    "gpt-4",
-    "gpt-4-0314",
-    "gpt-4-0613",
-    "gpt-4-32k",
-    "gpt-4-32k-0314",
-    "gpt-4-32k-0613",
+# Supported models (OpenAI and Anthropic)
+MODELS = [
+    # OpenAI models
+    "gpt-4o", "gpt-4", "gpt-4-turbo", "gpt-3.5-turbo",
+    # Anthropic models
+    "claude-3-opus-20240229", "claude-3-sonnet-20240229", "claude-3-haiku-20240307"
 ]
 
-OPENAI_VISION_MODELS = [
-    "gpt-4o",
-    "gpt-4-turbo",
-    "gpt-4-vision-preview",
-]
+# App header
+st.title("💬 Enki Chatbot")
+st.write("Choose your model, enter your API key, and start chatting!")
 
-ANTHROPIC_MODELS = [
-    "claude-3-opus-20240229",
-    "claude-3-sonnet-20240229",
-    "claude-3-haiku-20240307"
-]
+# Model selector
+selected_model = st.selectbox("Choose a model", MODELS)
 
-# ---- Model selection ----
-if provider == "OpenAI":
-    st.markdown("### Completion Models")
-    model = st.selectbox("Select a model:", OPENAI_COMPLETION_MODELS, key="completion_model")
-    
-    st.markdown("### Vision Models")
-    vision_model = st.selectbox("Select a vision model:", OPENAI_VISION_MODELS, key="vision_model")
+# API key input
+api_key = st.text_input("Enter your API key", type="password")
 
-    # Pick whichever was changed most recently (you can customize this logic)
-    model = vision_model if st.session_state["vision_model"] != OPENAI_VISION_MODELS[0] else model
-
-elif provider == "Anthropic":
-    st.markdown("### Anthropic Models")
-    model = st.selectbox("Select a model:", ANTHROPIC_MODELS)
+if not api_key:
+    st.info("Please enter your API key to begin.", icon="🔐")
 else:
-    model = st.text_input("Enter model name manually")
+    # Set LiteLLM config
+    if selected_model.startswith("claude"):
+        litellm.set_verbose = False
+        litellm.api_base = "https://api.anthropic.com"  # Optional, LiteLLM usually handles this
+        litellm.api_key = api_key
+        provider = "anthropic"
+    else:
+        litellm.api_key = api_key
+        provider = "openai"
 
-# ---- API Key Input ----
-api_key = st.text_input("Enter your API Key:", type="password")
+    # Initialize session state
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
 
-# ---- Prompt input ----
-prompt = st.text_area("Enter your prompt:")
+    # Display previous chat
+    for msg in st.session_state.messages:
+        with st.chat_message(msg["role"]):
+            st.markdown(msg["content"])
 
-# ---- Submit and respond ----
-if st.button("Submit") and prompt.strip() and api_key.strip():
-    st.write(f"**Provider:** `{provider}`")
-    st.write(f"**Model:** `{model}`")
+    # Prompt input
+    if prompt := st.chat_input("Say something..."):
+        # Append user message
+        st.session_state.messages.append({"role": "user", "content": prompt})
+        with st.chat_message("user"):
+            st.markdown(prompt)
 
-    try:
-        with st.spinner("Waiting for response..."):
-            messages = [{"role": "user", "content": prompt}]
-            response = completion(model=model, messages=messages, api_key=api_key)
-            content = response["choices"][0]["message"]["content"]
-            st.success("Response:")
-            st.markdown(content)
-    except Exception as e:
-        st.error(f"Error: {e}")
+        # Generate model response
+        with st.chat_message("assistant"):
+            response_container = st.empty()
+            collected_chunks = []
+
+            try:
+                stream = litellm.completion(
+                    model=selected_model,
+                    messages=[{"role": m["role"], "content": m["content"]} for m in st.session_state.messages],
+                    stream=True
+                )
+
+                for chunk in stream:
+                    delta = chunk.get("choices", [{}])[0].get("delta", {})
+                    content = delta.get("content", "") or delta.get("text", "")
+                    collected_chunks.append(content)
+                    response_container.markdown("".join(collected_chunks))
+
+                final_response = "".join(collected_chunks)
+                st.session_state.messages.append({"role": "assistant", "content": final_response})
+
+            except Exception as e:
+                st.error(f"Error: {e}")
