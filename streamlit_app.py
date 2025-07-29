@@ -43,11 +43,11 @@ if st.session_state.register:
             save_users(config)
             st.success("Registration successful! Please log in.")
             st.session_state.register = False
-            st.experimental_rerun()
+            st.rerun()
     
     if st.button("Back to Login"):
         st.session_state.register = False
-        st.experimental_rerun()
+        st.rerun()
 
 else:
     # Login form
