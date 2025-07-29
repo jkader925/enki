@@ -1,21 +1,16 @@
+# auth.py
 import streamlit as st
 import streamlit_authenticator as stauth
 import yaml
 from yaml.loader import SafeLoader
 from pathlib import Path
-
-USERS_FILE = Path("users.yaml")
+from settings import USERS_FILE, COOKIE_NAME, COOKIE_KEY
 
 def load_users():
     if USERS_FILE.exists():
         with open(USERS_FILE) as f:
-            data = yaml.load(f, Loader=SafeLoader)
-            # Ensure correct structure
-            if not data or "usernames" not in data:
-                return {"usernames": {}}
-            return data
+            return yaml.load(f, Loader=SafeLoader)
     else:
-        # Initialize empty structure
         return {"usernames": {}}
 
 def save_users(users):
@@ -24,20 +19,17 @@ def save_users(users):
 
 def get_authenticator():
     users = load_users()
-    # stauth expects credentials under 'usernames' key
-    credentials = users  # This should already have 'usernames'
     return stauth.Authenticate(
-        credentials,
-        "enki_chat_app",
-        "abcdef",  # your secret key here
-        cookie_expiry_days=30,
+        users,
+        COOKIE_NAME,
+        COOKIE_KEY,
+        cookie_expiry_days=30
     )
-    
+
 def login():
     authenticator = get_authenticator()
-    # Use 'main' or 'sidebar' location for now, to avoid the unrendered error
-    name, auth_status, username = authenticator.login("Login", "main")
+    name, auth_status, username = authenticator.login("Login", location="main")
     return authenticator, name, auth_status, username
 
 def logout(authenticator):
-    authenticator.logout("Logout", "sidebar")
+    authenticator.logout("Logout", location="sidebar")
