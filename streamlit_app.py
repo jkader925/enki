@@ -2,6 +2,7 @@ import yaml
 import streamlit as st
 from litellm import completion
 import os
+import base64
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities import Hasher
@@ -39,7 +40,7 @@ if not st.session_state.get("authentication_status"):
             st.session_state.show_register = True
             st.rerun()
     else:
-        # Show registration form with Returnn to Login button
+        # Show registration form with Return to Login button
         col1, col2 = st.columns([1, 2])
         with col1:
             if st.button("Return to Login"):
@@ -104,10 +105,50 @@ if st.session_state.get("authentication_status"):
                 yaml.dump(config, file, default_flow_style=False)
             st.success("API keys saved successfully!")
     
-    # Chatbot UI - Modified to use user's API keys
+    # Chatbot UI
     provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
     
-    # Get the appropriate API key based on provider selection
+    # Define model options grouped by category
+    all_model_options = {
+        "OpenAI": {
+            "Chat Completion Models": [
+                "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o4-mini", "o3-mini", "o3",
+                "o1-mini", "o1-preview", "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
+                "gpt-4o", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13", "gpt-4-turbo",
+                "gpt-4-turbo-preview", "gpt-4-0125-preview", "gpt-4-1106-preview",
+                "gpt-3.5-turbo-1106", "gpt-3.5-turbo", "gpt-3.5-turbo-0301",
+                "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
+                "gpt-4", "gpt-4-0314", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0314",
+                "gpt-4-32k-0613"
+            ],
+            "Vision Models": [
+                "gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"
+            ]
+        },
+        "Anthropic Claude": {
+            "Claude Models": [
+                "claude-3-opus-20240229",
+                "claude-3-haiku-20240307",
+            ]
+        }
+    }
+    
+    # Build and display model selection
+    model_display = []
+    for category, models in all_model_options[provider].items():
+        model_display.append(f"🔹 {category}")
+        for model in models:
+            model_display.append(f"  {model}")
+    
+    selected_display = st.selectbox("Choose model", model_display)
+    
+    if selected_display.startswith("  "):
+        model = selected_display.strip()
+    else:
+        st.warning("Please select a specific model (not just a category).")
+        st.stop()
+    
+    # Get the appropriate API key
     api_key = config['credentials']['usernames'][username]['api_keys'].get(
         'openai' if provider == "OpenAI" else 'anthropic', ""
     )
@@ -210,47 +251,6 @@ if st.session_state.get("authentication_status"):
                     
                 except Exception as e:
                     st.error(f"Error calling {provider} API: {str(e)}")
-
-    
-    # Define model options grouped by category
-    all_model_options = {
-        "OpenAI": {
-            "Chat Completion Models": [
-                "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o4-mini", "o3-mini", "o3",
-                "o1-mini", "o1-preview", "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
-                "gpt-4o", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13", "gpt-4-turbo",
-                "gpt-4-turbo-preview", "gpt-4-0125-preview", "gpt-4-1106-preview",
-                "gpt-3.5-turbo-1106", "gpt-3.5-turbo", "gpt-3.5-turbo-0301",
-                "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
-                "gpt-4", "gpt-4-0314", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0314",
-                "gpt-4-32k-0613"
-            ],
-            "Vision Models": [
-                "gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"
-            ]
-        },
-        "Anthropic Claude": {
-            "Claude Models": [
-                "claude-3-opus-20240229",
-                "claude-3-haiku-20240307",
-            ]
-        }
-    }
-    
-    # Build and display model selection
-    model_display = []
-    for category, models in all_model_options[provider].items():
-        model_display.append(f"🔹 {category}")
-        for model in models:
-            model_display.append(f"  {model}")
-    
-    selected_display = st.selectbox("Choose model", model_display)
-    
-    if selected_display.startswith("  "):
-        model = selected_display.strip()
-    else:
-        st.warning("Please select a specific model (not just a category).")
-        st.stop()
 
 elif st.session_state.get("authentication_status") is False:
     st.error('Username/password is incorrect')
