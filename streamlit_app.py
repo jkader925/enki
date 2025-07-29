@@ -1,9 +1,38 @@
 import streamlit as st
 from litellm import completion
+from auth import load_authenticator, save_user_config
 import os
 
+# Load login system
+authenticator, config = load_authenticator()
+name, auth_status, username = authenticator.login("Login", "main")
+
+if auth_status is False:
+    st.error("Invalid username or password")
+    st.stop()
+elif auth_status is None:
+    st.warning("Please enter your username and password")
+    st.stop()
+
+authenticator.logout("Logout", "sidebar")
+st.sidebar.success(f"Logged in as {name}")
+
+# API key storage section
+st.sidebar.header("🔑 API Key Settings")
+user_data = config["credentials"]["usernames"][username]
+
+for key_type in ["openai", "anthropic"]:
+    current_key = user_data.get("api_keys", {}).get(key_type, "")
+    new_key = st.sidebar.text_input(f"{key_type.capitalize()} API Key", value=current_key, type="password")
+    if "api_keys" not in user_data:
+        user_data["api_keys"] = {}
+    user_data["api_keys"][key_type] = new_key
+
+# Save updated config
+save_user_config(config)
+
 st.title("💬 Enki Chatbot with LiteLLM")
-st.write("Chat with LLMs using your API key. Select your model and provider below.")
+st.write("Chat with LLMs using your stored API key.")
 
 # Select provider
 provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
@@ -52,11 +81,22 @@ else:
     st.stop()
 
 # API key input
-api_key_label = f"{provider} API Key"
-api_key = st.text_input(api_key_label, type="password")
+#api_key_label = f"{provider} API Key"
+#api_key = st.text_input(api_key_label, type="password")
+#if not api_key:
+#    st.info(f"Please enter your {provider} API key to continue.", icon="🗝️")
+#    st.stop()
+
+# Get key from user settings
+key_lookup = {
+    "OpenAI": "openai",
+    "Anthropic Claude": "anthropic",
+}
+api_key = user_data["api_keys"].get(key_lookup[provider], "")
 if not api_key:
-    st.info(f"Please enter your {provider} API key to continue.", icon="🗝️")
+    st.warning("No API key found in settings.")
     st.stop()
+
 
 # Initialize session state
 if "messages" not in st.session_state:
