@@ -3,8 +3,6 @@ import streamlit_authenticator as stauth
 from create_users import load_users, save_users, hash_password
 from litellm import completion
 import os
-from yaml.loader import SafeLoader
-import yaml
 
 
 
