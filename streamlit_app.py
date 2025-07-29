@@ -5,6 +5,24 @@ import os
 st.title("💬 Enki Chatbot with LiteLLM")
 st.write("Chat with LLMs using your API key. Select your model and provider below.")
 
+authenticator, name, auth_status, username = login()
+
+if auth_status:
+    st.sidebar.write(f"Welcome {name}!")
+    logout(authenticator)
+
+    api_key_settings(username)  # API key input section
+
+    # Load user API key from users.yaml
+    from auth import load_users
+    users = load_users()
+    user_api_key = users["usernames"][username].get("api_key", "")
+
+    if not user_api_key:
+        st.warning("Please enter your API key in Settings to continue.")
+        st.stop()
+
+
 # Select provider
 provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
 
@@ -51,6 +69,8 @@ else:
     st.warning("Please select a specific model (not just a category).")
     st.stop()
 
+
+
 # API key input
 api_key_label = f"{provider} API Key"
 api_key = st.text_input(api_key_label, type="password")
@@ -95,3 +115,8 @@ if prompt := st.chat_input("Type your message here..."):
         response_text = st.write_stream(stream)
 
     st.session_state.messages.append({"role": "assistant", "content": response_text})
+
+elif auth_status is False:
+    st.error("Username/password is incorrect")
+else:
+    st.warning("Please enter your username and password")
