@@ -1,5 +1,7 @@
 import yaml
 import streamlit as st
+from litellm import completion
+import os
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities import (CredentialsError,
@@ -9,6 +11,61 @@ from streamlit_authenticator.utilities import (CredentialsError,
                                                RegisterError,
                                                ResetError,
                                                UpdateError)
+
+
+
+st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
+st.title("💬 Enki Chatbot with LiteLLM")
+
+        # Chatbot UI below
+        st.header("Chat with Enki")
+
+        # Select provider
+        provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
+
+        # Define model options grouped by category
+        all_model_options = {
+            "OpenAI": {
+                "Chat Completion Models": [
+                    "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o4-mini", "o3-mini", "o3",
+                    "o1-mini", "o1-preview", "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
+                    "gpt-4o", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13", "gpt-4-turbo",
+                    "gpt-4-turbo-preview", "gpt-4-0125-preview", "gpt-4-1106-preview",
+                    "gpt-3.5-turbo-1106", "gpt-3.5-turbo", "gpt-3.5-turbo-0301",
+                    "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
+                    "gpt-4", "gpt-4-0314", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0314",
+                    "gpt-4-32k-0613"
+                ],
+                "Vision Models": [
+                    "gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"
+                ]
+            },
+            "Anthropic Claude": {
+                "Claude Models": [
+                    "claude-3-opus-20240229",
+                    "claude-3-haiku-20240307",
+                ]
+            }
+        }
+
+        # Build a flattened list with grouping
+        model_display = []
+        for category, models in all_model_options[provider].items():
+            model_display.append(f"🔹 {category}")
+            for model in models:
+                model_display.append(f"  {model}")
+
+        # Model selection
+        selected_display = st.selectbox("Choose model", model_display)
+
+        # Extract actual model name
+        if selected_display.startswith("  "):
+            model = selected_display.strip()
+        else:
+            st.warning("Please select a specific model (not just a category).")
+            st.stop()
+
+
 
 # Loading config file
 with open('config.yaml', 'r', encoding='utf-8') as file:
