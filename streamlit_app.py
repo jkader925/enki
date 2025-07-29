@@ -187,3 +187,7 @@ else:
                 response_text = st.write_stream(stream)
 
             st.session_state.messages.append({"role": "assistant", "content": response_text})
+
+    if st.button("Register new user?"):
+        st.session_state.register = True
+        st.experimental_rerun()
