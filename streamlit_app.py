@@ -63,11 +63,58 @@ if not st.session_state.get("authentication_status"):
 
 # After login content
 if st.session_state.get("authentication_status"):
-    st.write(f'Welcome *{st.session_state["name"]}*')  
-    authenticator.logout("Logout", "sidebar")
+    st.write(f'Welcome *{st.session_state["name"]}*')
     
-    # Chatbot UI
+    with st.sidebar:
+        authenticator.logout("Logout")
+        st.write("---")
+        st.header("🔑 API Key Management")
+        
+        # Get current user's data
+        username = st.session_state["username"]
+        user_data = config['credentials']['usernames'].get(username, {})
+        
+        # Initialize API keys dictionary if it doesn't exist
+        if 'api_keys' not in user_data:
+            user_data['api_keys'] = {}
+            config['credentials']['usernames'][username]['api_keys'] = {}
+        
+        # API Key Input Fields
+        openai_key = st.text_input(
+            "OpenAI API Key", 
+            value=user_data['api_keys'].get('openai', ''), 
+            type="password",
+            help="Get your key from https://platform.openai.com/account/api-keys"
+        )
+        
+        anthropic_key = st.text_input(
+            "Anthropic API Key", 
+            value=user_data['api_keys'].get('anthropic', ''), 
+            type="password",
+            help="Get your key from https://console.anthropic.com/settings/keys"
+        )
+        
+        # Save keys when user clicks the button
+        if st.button("Save API Keys"):
+            config['credentials']['usernames'][username]['api_keys'] = {
+                'openai': openai_key,
+                'anthropic': anthropic_key
+            }
+            with open('config.yaml', 'w', encoding='utf-8') as file:
+                yaml.dump(config, file, default_flow_style=False)
+            st.success("API keys saved successfully!")
+    
+    # Chatbot UI - Modified to use user's API keys
     provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
+    
+    # Get the appropriate API key based on provider selection
+    api_key = config['credentials']['usernames'][username]['api_keys'].get(
+        'openai' if provider == "OpenAI" else 'anthropic', ""
+    )
+    
+    if not api_key:
+        st.warning(f"Please enter your {provider} API key in the sidebar")
+        st.stop()
     
     # Define model options grouped by category
     all_model_options = {
