@@ -20,5 +20,4 @@ def save_users(config):
         yaml.dump(config, f)
 
 def hash_password(password):
-    # The correct way to hash passwords in current versions of streamlit-authenticator
     return stauth.Hasher([password]).generate()[0]
