@@ -243,10 +243,22 @@ if st.session_state.get("authentication_status"):
                             stream=True
                         )
                     
-                    # Stream the response
-                    response_text = st.write_stream(response)
+                    # Create a placeholder for the streaming response
+                    response_placeholder = st.empty()
+                    full_response = ""
+                    
+                    # Process each chunk in the stream
+                    for chunk in response:
+                        if hasattr(chunk, 'choices') and chunk.choices:
+                            content = chunk.choices[0].delta.content
+                            if content:
+                                full_response += content
+                                response_placeholder.markdown(full_response + "▌")
+                    
+                    # Finalize the response display
+                    response_placeholder.markdown(full_response)
                     st.session_state.messages.append(
-                        {"role": "assistant", "content": response_text}
+                        {"role": "assistant", "content": full_response}
                     )
                     
                 except Exception as e:
