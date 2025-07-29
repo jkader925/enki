@@ -1,21 +1,23 @@
-import streamlit_authenticator as stauth
+# user_utils.py
 import yaml
+from yaml.loader import SafeLoader
+import streamlit_authenticator as stauth
+from pathlib import Path
 
-passwords = stauth.Hasher(["your_password_here"]).generate()
-config = {
-    "credentials": {
-        "usernames": {
-            "your_username": {
-                "name": "Your Name",
-                "email": "you@example.com",
-                "password": passwords[0],
-                "api_keys": {"openai": "", "anthropic": ""}
-            }
+USERS_FILE = Path("users.yaml")
+
+def load_users():
+    if not USERS_FILE.exists():
+        return {
+            "credentials": {"usernames": {}},
+            "cookie": {"expiry_days": 30, "key": "enki_cookie_secret", "name": "enki_auth"},
         }
-    },
-    "cookie": {"expiry_days": 30, "key": "somekey", "name": "enki_auth"},
-    "preauthorized": {"emails": ["you@example.com"]}
-}
+    with open(USERS_FILE, "r") as f:
+        return yaml.load(f, Loader=SafeLoader)
 
-with open("users.yaml", "w") as f:
-    yaml.dump(config, f)
+def save_users(config):
+    with open(USERS_FILE, "w") as f:
+        yaml.dump(config, f)
+
+def hash_password(password):
+    return stauth.Hasher([password]).generate()[0]
