@@ -11,7 +11,6 @@ st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
 # Load users config
 config = load_users()
 
-
 st.title("💬 Enki Chatbot with LiteLLM")
 
 if "register" not in st.session_state:
