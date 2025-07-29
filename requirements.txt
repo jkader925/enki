@@ -3,3 +3,4 @@ litellm
 openai
 anthropic
 streamlit_authenticator
+subprocess
