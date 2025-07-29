@@ -30,7 +30,7 @@ col1, col2 = st.columns([3, 1])
 with col1:
     # Creating a login widget
     try:
-        authenticator.login('Login', 'main')
+        authenticator.login()
     except Exception as e:
         st.error(f"Login error: {e}")
 
