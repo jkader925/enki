@@ -5,9 +5,7 @@ import os
 
 # Load login system
 authenticator, config = load_authenticator()
-name, auth_status = authenticator.login(location="main", form_name="Login")
-
-
+name, auth_status = authenticator.login("main")
 
 if auth_status is False:
     st.error("Invalid username or password")
