@@ -137,14 +137,14 @@ elif st.session_state["authentication_status"] is None:
 #    st.write('_If you use the password reset widget please revert the password to what it was before once you are done._')
 
 # Creating a new user registration widget
-#try:
-#    (email_of_registered_user,
-#     username_of_registered_user,
-#     name_of_registered_user) = authenticator.register_user()
-#    if email_of_registered_user:
-#        st.success('User registered successfully')
-#except RegisterError as e:
-#    st.error(e)
+try:
+    (email_of_registered_user,
+     username_of_registered_user,
+     name_of_registered_user) = authenticator.register_user()
+    if email_of_registered_user:
+        st.success('User registered successfully')
+except RegisterError as e:
+    st.error(e)
 
 # Creating a forgot password widget
 #try:
