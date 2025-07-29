@@ -5,7 +5,8 @@ import os
 
 # Load login system
 authenticator, config = load_authenticator()
-name, auth_status, username = authenticator.login(location="main", form_name="Login")
+name, auth_status = authenticator.login(location="main", form_name="Login")
+
 
 
 if auth_status is False:
