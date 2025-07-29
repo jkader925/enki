@@ -115,6 +115,102 @@ if st.session_state.get("authentication_status"):
     if not api_key:
         st.warning(f"Please enter your {provider} API key in the sidebar")
         st.stop()
+
+    # Initialize chat history
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    
+    # Check if selected model is a vision model
+    is_vision_model = (provider == "OpenAI" and 
+                      any(vm in model for vm in ["gpt-4o", "gpt-4-turbo", "gpt-4-vision"]))
+    
+    # Image upload for vision models
+    uploaded_image = None
+    if is_vision_model:
+        st.subheader("Upload Image")
+        col1, col2 = st.columns(2)
+        with col1:
+            uploaded_image = st.file_uploader(
+                "Drag and drop or click to upload",
+                type=["jpg", "jpeg", "png"],
+                key="image_upload"
+            )
+        with col2:
+            if uploaded_image:
+                st.image(uploaded_image, width=200)
+    
+    # Display chat messages
+    for message in st.session_state.messages:
+        with st.chat_message(message["role"]):
+            if message.get("image"):
+                st.image(message["image"], width=300)
+            st.markdown(message["content"])
+    
+    # Chat input
+    if prompt := st.chat_input("Type your message here..."):
+        # Add user message to chat history
+        message_content = {"role": "user", "content": prompt}
+        if uploaded_image:
+            message_content["image"] = uploaded_image.getvalue()
+        st.session_state.messages.append(message_content)
+        
+        # Display user message
+        with st.chat_message("user"):
+            if uploaded_image:
+                st.image(uploaded_image.getvalue(), width=300)
+            st.markdown(prompt)
+        
+        # Prepare messages for API
+        messages_for_api = []
+        for msg in st.session_state.messages:
+            if msg.get("image"):
+                messages_for_api.append({
+                    "role": msg["role"],
+                    "content": [
+                        {"type": "text", "text": msg["content"]},
+                        {"type": "image_url", 
+                         "image_url": {
+                             "url": f"data:image/jpeg;base64,{base64.b64encode(msg['image']).decode('utf-8')}"
+                         }}
+                    ]
+                })
+            else:
+                messages_for_api.append({
+                    "role": msg["role"],
+                    "content": msg["content"]
+                })
+        
+        # Call the LLM
+        with st.chat_message("assistant"):
+            with st.spinner("Thinking..."):
+                try:
+                    if is_vision_model and uploaded_image:
+                        # Special handling for vision models with images
+                        response = completion(
+                            model=model,
+                            messages=messages_for_api,
+                            api_key=api_key,
+                            stream=True
+                        )
+                    else:
+                        # Regular text completion
+                        response = completion(
+                            model=model,
+                            messages=[{"role": m["role"], "content": m["content"]} 
+                                     for m in st.session_state.messages],
+                            api_key=api_key,
+                            stream=True
+                        )
+                    
+                    # Stream the response
+                    response_text = st.write_stream(response)
+                    st.session_state.messages.append(
+                        {"role": "assistant", "content": response_text}
+                    )
+                    
+                except Exception as e:
+                    st.error(f"Error calling {provider} API: {str(e)}")
+
     
     # Define model options grouped by category
     all_model_options = {
