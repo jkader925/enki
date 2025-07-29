@@ -125,26 +125,26 @@ elif st.session_state["authentication_status"] is None:
 
 
 # Creating a password reset widget
-if st.session_state["authentication_status"]:
-    try:
-        if authenticator.reset_password(st.session_state["username"]):
-            st.success('Password modified successfully')
-            config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
-    except ResetError as e:
-        st.error(e)
-    except CredentialsError as e:
-        st.error(e)
-    st.write('_If you use the password reset widget please revert the password to what it was before once you are done._')
+#if st.session_state["authentication_status"]:
+#    try:
+#        if authenticator.reset_password(st.session_state["username"]):
+#            st.success('Password modified successfully')
+#            config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
+#    except ResetError as e:
+#        st.error(e)
+#    except CredentialsError as e:
+#        st.error(e)
+#    st.write('_If you use the password reset widget please revert the password to what it was before once you are done._')
 
 # Creating a new user registration widget
-try:
-    (email_of_registered_user,
-     username_of_registered_user,
-     name_of_registered_user) = authenticator.register_user()
-    if email_of_registered_user:
-        st.success('User registered successfully')
-except RegisterError as e:
-    st.error(e)
+#try:
+#    (email_of_registered_user,
+#     username_of_registered_user,
+#     name_of_registered_user) = authenticator.register_user()
+#    if email_of_registered_user:
+#        st.success('User registered successfully')
+#except RegisterError as e:
+#    st.error(e)
 
 # Creating a forgot password widget
 #try:
