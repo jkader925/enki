@@ -1,195 +1,138 @@
+import yaml
 import streamlit as st
+from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
-from create_users import load_users, save_users, hash_password
-from litellm import completion
-import os
+from streamlit_authenticator.utilities import (CredentialsError,
+                                               ForgotError,
+                                               Hasher,
+                                               LoginError,
+                                               RegisterError,
+                                               ResetError,
+                                               UpdateError)
 
+# Loading config file
+with open('config.yaml', 'r', encoding='utf-8') as file:
+    config = yaml.load(file, Loader=SafeLoader)
 
+st.image('logo.png')
 
-st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
+col1, col2 = st.columns(2)
+with col1:
+  st.metric('Streamlit Version', '1.43.1')
+with col2:
+  st.metric('Streamlit Authenticator Version', '0.4.2')
 
-# Load users config
-config = load_users()
+st.code(f"""
+Credentials:
 
-st.title("💬 Enki Chatbot with LiteLLM")
+First name: {config['credentials']['usernames']['jsmith']['first_name']}
+Last name: {config['credentials']['usernames']['jsmith']['last_name']}
+Username: jsmith
+Password: {'abc' if 'pp' not in config['credentials']['usernames']['jsmith'].keys() else config['credentials']['usernames']['jsmith']['pp']}
 
-if "register" not in st.session_state:
-    st.session_state.register = False
+First name: {config['credentials']['usernames']['rbriggs']['first_name']}
+Last name: {config['credentials']['usernames']['rbriggs']['last_name']}
+Username: rbriggs
+Password: {'def' if 'pp' not in config['credentials']['usernames']['rbriggs'].keys() else config['credentials']['usernames']['rbriggs']['pp']}
+"""
+)
 
-if st.session_state.register:
-    st.subheader("Register New User")
-    new_username = st.text_input("Choose a username")
-    new_name = st.text_input("Full name")
-    new_email = st.text_input("Email address")
-    new_password = st.text_input("Choose a password", type="password")
-    confirm_password = st.text_input("Confirm password", type="password")
-    
-    if st.button("Register"):
-        usernames = config["credentials"]["usernames"]
-        if new_username in usernames:
-            st.error("Username already exists.")
-        elif new_password != confirm_password:
-            st.error("Passwords do not match.")
-        elif not new_username or not new_password:
-            st.error("Please fill all fields.")
-        else:
-            hashed_pw = hash_password(new_password)
-            usernames[new_username] = {
-                "name": new_name,
-                "email": new_email,
-                "password": hashed_pw,
-                "api_keys": {"openai": "", "anthropic": ""}
-            }
-            save_users(config)
-            st.success("Registration successful! Please log in.")
-            st.session_state.register = False
-            st.rerun()
-    
-    if st.button("Back to Login"):
-        st.session_state.register = False
-        st.rerun()
+# Creating the authenticator object
+authenticator = stauth.Authenticate(
+    config['credentials'],
+    config['cookie']['name'],
+    config['cookie']['key'],
+    config['cookie']['expiry_days']
+)
 
-else:
-    # Login form
-    authenticator = stauth.Authenticate(
-        config['credentials'],
-        config['cookie']['name'],
-        config['cookie']['key'],
-        config['cookie']['expiry_days']
-    )
-    
-    auth_status = authenticator.login("main")
-    
-    if auth_status is False:
-        st.error("Username/password is incorrect")
-    elif auth_status is None:
-        st.warning("Please enter your username and password")
-    else:
-        authenticator.logout("Logout", "sidebar")
-        st.sidebar.success(f"Logged in as {name}")
+# authenticator = stauth.Authenticate(
+#     '../config.yaml'
+# )
 
-        # Derive username key (assuming usernames are lowercase keys)
-        username = None
-        for u, v in config["credentials"]["usernames"].items():
-            if v.get("name") == name:
-                username = u
-                break
-        
-        if username is None:
-            st.error("Could not find your user info in config!")
-            st.stop()
-        
-        user_data = config["credentials"]["usernames"][username]
+# Creating a login widget
+try:
+    authenticator.login()
+except LoginError as e:
+    st.error(e)
 
-        # API key settings in sidebar
-        st.sidebar.header("🔑 API Key Settings")
-        for key_type in ["openai", "anthropic"]:
-            current_key = user_data.get("api_keys", {}).get(key_type, "")
-            new_key = st.sidebar.text_input(f"{key_type.capitalize()} API Key", value=current_key, type="password")
-            if "api_keys" not in user_data:
-                user_data["api_keys"] = {}
-            user_data["api_keys"][key_type] = new_key
-        
-        if st.sidebar.button("Save API Keys"):
-            save_users(config)
-            st.sidebar.success("API keys saved.")
+if st.session_state["authentication_status"]:
+    st.write('___')
+    authenticator.logout()
+    st.write(f'Welcome *{st.session_state["name"]}*')
+    st.title('Some content')    
+    st.write('___')
+elif st.session_state["authentication_status"] is False:
+    st.error('Username/password is incorrect')
+elif st.session_state["authentication_status"] is None:
+    st.warning('Please enter your username and password')
 
-        # Chatbot UI below
-        st.header("Chat with Enki")
+st.subheader('Guest login')
 
-        # Select provider
-        provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
+# Creating a guest login button
+try:
+    authenticator.experimental_guest_login('Login with Google', provider='google',
+                                            oauth2=st.secrets["oauth2"])
+    authenticator.experimental_guest_login('Login with Microsoft', provider='microsoft',
+                                            oauth2=st.secrets["oauth2"])
+except LoginError as e:
+    st.error(e)
 
-        # Define model options grouped by category
-        all_model_options = {
-            "OpenAI": {
-                "Chat Completion Models": [
-                    "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o4-mini", "o3-mini", "o3",
-                    "o1-mini", "o1-preview", "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
-                    "gpt-4o", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13", "gpt-4-turbo",
-                    "gpt-4-turbo-preview", "gpt-4-0125-preview", "gpt-4-1106-preview",
-                    "gpt-3.5-turbo-1106", "gpt-3.5-turbo", "gpt-3.5-turbo-0301",
-                    "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
-                    "gpt-4", "gpt-4-0314", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0314",
-                    "gpt-4-32k-0613"
-                ],
-                "Vision Models": [
-                    "gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"
-                ]
-            },
-            "Anthropic Claude": {
-                "Claude Models": [
-                    "claude-3-opus-20240229",
-                    "claude-3-haiku-20240307",
-                ]
-            }
-        }
+# Creating a password reset widget
+if st.session_state["authentication_status"]:
+    try:
+        if authenticator.reset_password(st.session_state["username"]):
+            st.success('Password modified successfully')
+            config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
+    except ResetError as e:
+        st.error(e)
+    except CredentialsError as e:
+        st.error(e)
+    st.write('_If you use the password reset widget please revert the password to what it was before once you are done._')
 
-        # Build a flattened list with grouping
-        model_display = []
-        for category, models in all_model_options[provider].items():
-            model_display.append(f"🔹 {category}")
-            for model in models:
-                model_display.append(f"  {model}")
+# Creating a new user registration widget
+try:
+    (email_of_registered_user,
+     username_of_registered_user,
+     name_of_registered_user) = authenticator.register_user()
+    if email_of_registered_user:
+        st.success('User registered successfully')
+except RegisterError as e:
+    st.error(e)
 
-        # Model selection
-        selected_display = st.selectbox("Choose model", model_display)
+# Creating a forgot password widget
+try:
+    (username_of_forgotten_password,
+     email_of_forgotten_password,
+     new_random_password) = authenticator.forgot_password()
+    if username_of_forgotten_password:
+        st.success(f"New password **'{new_random_password}'** to be sent to user securely")
+        config['credentials']['usernames'][username_of_forgotten_password]['pp'] = new_random_password
+        # Random password to be transferred to the user securely
+    elif not username_of_forgotten_password:
+        st.error('Username not found')
+except ForgotError as e:
+    st.error(e)
 
-        # Extract actual model name
-        if selected_display.startswith("  "):
-            model = selected_display.strip()
-        else:
-            st.warning("Please select a specific model (not just a category).")
-            st.stop()
+# Creating a forgot username widget
+try:
+    (username_of_forgotten_username,
+     email_of_forgotten_username) = authenticator.forgot_username()
+    if username_of_forgotten_username:
+        st.success(f"Username **'{username_of_forgotten_username}'** to be sent to user securely")
+        # Username to be transferred to the user securely
+    elif not username_of_forgotten_username:
+        st.error('Email not found')
+except ForgotError as e:
+    st.error(e)
 
-        # Get API key from user data
-        key_lookup = {
-            "OpenAI": "openai",
-            "Anthropic Claude": "anthropic",
-        }
-        api_key = user_data["api_keys"].get(key_lookup[provider], "")
-        if not api_key:
-            st.warning(f"No API key found for {provider}. Please enter your API key in the sidebar.")
-            st.stop()
+# Creating an update user details widget
+if st.session_state["authentication_status"]:
+    try:
+        if authenticator.update_user_details(st.session_state["username"]):
+            st.success('Entries updated successfully')
+    except UpdateError as e:
+        st.error(e)
 
-        # Initialize session state for messages
-        if "messages" not in st.session_state:
-            st.session_state.messages = []
-
-        # Display previous messages
-        for msg in st.session_state.messages:
-            with st.chat_message(msg["role"]):
-                st.markdown(msg["content"])
-
-        # Handle user input
-        if prompt := st.chat_input("Type your message here..."):
-            st.session_state.messages.append({"role": "user", "content": prompt})
-            with st.chat_message("user"):
-                st.markdown(prompt)
-
-            llm_messages = [{"role": m["role"], "content": m["content"]} for m in st.session_state.messages]
-
-            # Set API key env var
-            env_vars = {
-                "OpenAI": "OPENAI_API_KEY",
-                "Anthropic Claude": "ANTHROPIC_API_KEY",
-            }
-            os.environ[env_vars[provider]] = api_key
-
-            # Call LiteLLM completion stream
-            stream = completion(
-                model=model,
-                messages=llm_messages,
-                stream=True,
-                api_key=api_key,
-                provider=provider.lower().replace(" ", ""),
-            )
-
-            with st.chat_message("assistant"):
-                response_text = st.write_stream(stream)
-
-            st.session_state.messages.append({"role": "assistant", "content": response_text})
-
-    if st.button("Register new user?"):
-        st.session_state.register = True
-        st.rerun()
+# Saving config file
+with open('config.yaml', 'w', encoding='utf-8') as file:
+    yaml.dump(config, file, default_flow_style=False)
