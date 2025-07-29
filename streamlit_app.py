@@ -39,15 +39,27 @@ if not st.session_state.get("authentication_status"):
             st.session_state.show_register = True
             st.rerun()
     else:
-        # Show registration form
+        # Show registration form with Return to Login button
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            if st.button("Return to Login"):
+                st.session_state.show_register = False
+                st.rerun()
+        
         try:
             (email_of_registered_user,
              username_of_registered_user,
              name_of_registered_user) = authenticator.register_user()
+            
             if email_of_registered_user:
-                st.success('User registered successfully')
-        except RegisterError as e:
-            st.error(e)
+                st.success('User registered successfully! Please login.')
+                st.session_state.show_register = False
+                with open('config.yaml', 'w', encoding='utf-8') as file:
+                    yaml.dump(config, file, default_flow_style=False)
+                st.rerun()
+                
+        except Exception as e:
+            st.error(f"Registration error: {e}")
 
 # After login content
 if st.session_state.get("authentication_status"):
