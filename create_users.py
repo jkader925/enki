@@ -20,5 +20,4 @@ def save_users(config):
         yaml.dump(config, f)
 
 def hash_password(password):
-    hasher = stauth.Hasher()
-    return hasher.hash_passwords([password])[0]
+    return stauth.Hasher([password]).generate()[0]
