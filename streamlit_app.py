@@ -9,13 +9,9 @@ from streamlit_authenticator.utilities import Hasher
 st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
 st.title("💬 Enki Chatbot with LiteLLM")
 
-# Initialize session state variables
-if 'auth_states' not in st.session_state:
-    st.session_state.auth_states = {
-        'show_register': False,
-        'registration_complete': False,
-        'force_rerun': False
-    }
+# Initialize session state for registration form
+if 'show_register' not in st.session_state:
+    st.session_state.show_register = False
 
 # Loading config file
 with open('config.yaml', 'r', encoding='utf-8') as file:
@@ -29,56 +25,61 @@ authenticator = stauth.Authenticate(
     config['cookie']['expiry_days']
 )
 
-# Handle forced rerun if needed
-if st.session_state.auth_states['force_rerun']:
-    st.session_state.auth_states['force_rerun'] = False
-    st.rerun()
-
 # Show either login or registration form based on state
 if not st.session_state.get("authentication_status"):
-    if not st.session_state.auth_states['show_register']:
+    if not st.session_state.show_register:
         # Show login form
         try:
             authenticator.login()
-            
-            # Only show register button if not authenticated
-            if not st.session_state.get("authentication_status"):
-                if st.button("Register New User"):
-                    st.session_state.auth_states['show_register'] = True
-                    st.session_state.auth_states['force_rerun'] = True
-                    
         except Exception as e:
             st.error(f"Login error: {e}")
-            
+        
+        # Register button below login form
+        if st.button("Register New User"):
+            st.session_state.show_register = True
+            st.rerun()
     else:
         # Show registration form
-        try:
-            st.write("")  # Spacer
+        st.subheader("Register New User")
+        with st.form("register_form"):
+            # Create registration fields manually
+            register_email = st.text_input("Email")
+            register_username = st.text_input("Username")
+            register_name = st.text_input("Name")
+            register_password = st.text_input("Password", type="password")
+            register_password_confirm = st.text_input("Confirm Password", type="password")
             
-            # Use the authenticator's registration form
-            register_success = False
-            try:
-                if authenticator.register_user():
-                    register_success = True
-            except Exception as e:
-                st.error(f"Registration error: {e}")
+            col1, col2 = st.columns([1, 2])
+            with col1:
+                submitted = st.form_submit_button("Register")
+            with col2:
+                if st.form_submit_button("Back to Login"):
+                    st.session_state.show_register = False
+                    st.rerun()
             
-            if register_success:
-                st.session_state.auth_states['show_register'] = False
-                st.session_state.auth_states['registration_complete'] = True
-                with open('config.yaml', 'w', encoding='utf-8') as file:
-                    yaml.dump(config, file, default_flow_style=False)
-                st.success('User registered successfully! Please login.')
-                st.session_state.auth_states['force_rerun'] = True
-            
-            # Back button
-            if st.button("Back to Login"):
-                st.session_state.auth_states['show_register'] = False
-                st.session_state.auth_states['force_rerun'] = True
-                
-        except Exception as e:
-            st.error(f"Error: {e}")
-
+            if submitted:
+                if register_password != register_password_confirm:
+                    st.error("Passwords do not match")
+                elif not all([register_email, register_username, register_name, register_password]):
+                    st.error("Please fill all fields")
+                else:
+                    # Hash the password
+                    hashed_password = Hasher([register_password]).generate()[0]
+                    
+                    # Add new user to config
+                    config['credentials']['usernames'][register_username] = {
+                        'email': register_email,
+                        'name': register_name,
+                        'password': hashed_password
+                    }
+                    
+                    # Save config
+                    with open('config.yaml', 'w', encoding='utf-8') as file:
+                        yaml.dump(config, file, default_flow_style=False)
+                    
+                    st.success('User registered successfully! Please login.')
+                    st.session_state.show_register = False
+                    st.rerun()
 
 # After login content
 if st.session_state.get("authentication_status"):
@@ -130,9 +131,8 @@ if st.session_state.get("authentication_status"):
 
 elif st.session_state.get("authentication_status") is False:
     st.error('Username/password is incorrect')
-elif st.session_state.get("authentication_status") is None:
-    if not st.session_state.auth_states['show_register']:
-        st.warning('Please enter your username and password')
+elif st.session_state.get("authentication_status") is None and not st.session_state.show_register:
+    st.warning('Please enter your username and password')
 
 # Save config file after any changes
 with open('config.yaml', 'w', encoding='utf-8') as file:
