@@ -24,20 +24,7 @@ with open('config.yaml', 'r', encoding='utf-8') as file:
 #  st.metric('Streamlit Authenticator Version', '0.4.2')
 
 
-st.code(f"""
-Credentials:
 
-First name: {config['credentials']['usernames']['jsmith']['first_name']}
-Last name: {config['credentials']['usernames']['jsmith']['last_name']}
-Username: jsmith
-Password: {'abc' if 'pp' not in config['credentials']['usernames']['jsmith'].keys() else config['credentials']['usernames']['jsmith']['pp']}
-
-First name: {config['credentials']['usernames']['rbriggs']['first_name']}
-Last name: {config['credentials']['usernames']['rbriggs']['last_name']}
-Username: rbriggs
-Password: {'def' if 'pp' not in config['credentials']['usernames']['rbriggs'].keys() else config['credentials']['usernames']['rbriggs']['pp']}
-"""
-)
 
 # Creating the authenticator object
 authenticator = stauth.Authenticate(
