@@ -39,7 +39,7 @@ if not st.session_state.get("authentication_status"):
             st.session_state.show_register = True
             st.rerun()
     else:
-        # Show registration form with Return to Login button
+        # Show registration form with Returnn to Login button
         col1, col2 = st.columns([1, 2])
         with col1:
             if st.button("Return to Login"):
