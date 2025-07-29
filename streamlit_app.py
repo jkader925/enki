@@ -3,13 +3,17 @@ import streamlit_authenticator as stauth
 from create_users import load_users, save_users, hash_password
 from litellm import completion
 import os
+from yaml.loader import SafeLoader
 
 
 
 st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
 
 # Load users config
-config = load_users()
+# config = load_users()
+
+with open('users.yaml') as file:
+    config = yaml.load(file, Loader=SafeLoader)
 
 st.title("💬 Enki Chatbot with LiteLLM")
 
