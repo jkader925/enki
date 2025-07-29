@@ -14,7 +14,7 @@ from streamlit_authenticator.utilities import (CredentialsError,
 with open('config.yaml', 'r', encoding='utf-8') as file:
     config = yaml.load(file, Loader=SafeLoader)
 
-st.image('logo.png')
+#st.image('logo.png')
 
 col1, col2 = st.columns(2)
 with col1:
