@@ -29,7 +29,7 @@ model_options = {
     ],
     "OpenAI Vision Models": [
         "gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"
-    ]
+    ],
     "Anthropic Claude": [
         "claude-3-opus-20240229",
         "claude-3-haiku-20240307",
