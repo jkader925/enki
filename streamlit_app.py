@@ -56,13 +56,7 @@ except LoginError as e:
     st.error(e)
 
 if st.session_state["authentication_status"]:
-    st.write('___')
-    authenticator.logout()
-    st.write(f'Welcome *{st.session_state["name"]}*')
-    st.title('Some content')    
-    st.write('___')
-    # Chatbot UI below
-    st.header("Chat with Enki")
+    st.write(f'Welcome *{st.session_state["name"]}*')  
     
     # Select provider
     provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
@@ -108,7 +102,7 @@ if st.session_state["authentication_status"]:
     else:
         st.warning("Please select a specific model (not just a category).")
         st.stop()
-
+    authenticator.logout()
 
 elif st.session_state["authentication_status"] is False:
     st.error('Username/password is incorrect')
