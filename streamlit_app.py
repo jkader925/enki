@@ -66,10 +66,12 @@ elif st.session_state["authentication_status"] is False:
 elif st.session_state["authentication_status"] is None:
     st.warning('Please enter your username and password')
 
+
+'''
 st.subheader('Guest login')
 
 # Creating a guest login button
-'''
+
 try:
     authenticator.experimental_guest_login('Login with Google', provider='google',
                                             oauth2=st.secrets["oauth2"])
