@@ -7,8 +7,8 @@ from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities import Hasher
 
-st.set_page_config(page_title="💬 Enki Chatbot with LiteLLM", layout="wide")
-st.title("💬 Enki Chatbot with LiteLLM")
+st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
+st.title("💬 Enki Chatbot")
 
 # Initialize session state for registration form
 if 'show_register' not in st.session_state:
