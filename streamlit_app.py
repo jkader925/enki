@@ -8,7 +8,7 @@ import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities import Hasher
 
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
-st.title("💬 Enki Chatbot")
+st.title("Enki Workshop")
 
 # Initialize session state for registration form
 if 'show_register' not in st.session_state:
