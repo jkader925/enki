@@ -1,6 +1,5 @@
 import streamlit as st
 from litellm import completion
-import base64
 from streamlit.components.v1 import html
 
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
@@ -12,10 +11,16 @@ xterm_html = """
 <script src="https://unpkg.com/xterm@5.3.0/lib/xterm.js"></script>
 <script src="https://unpkg.com/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
 
-<div id="terminal" style="width:100%; height:400px; background:#000; padding:10px"></div>
+<div id="terminal" style="width:100%; height:100%; background:#000; padding:10px"></div>
 
 <script>
-const term = new Terminal();
+const term = new Terminal({
+    fontSize: 14,
+    theme: {
+        background: '#111827',
+        foreground: '#f3f4f6'
+    }
+});
 const fitAddon = new FitAddon();
 term.loadAddon(fitAddon);
 term.open(document.getElementById('terminal'));
@@ -32,74 +37,42 @@ term.onData(data => {
 </script>
 """
 
-# ====================== Main App Layout ======================
-tab1, tab2 = st.tabs(["💬 Chat", "🖥️ VM Terminal"])
+# ====================== Split Screen Layout ======================
+col1, col2 = st.columns([1, 1], gap="medium")
 
-with tab1:
-    # Chatbot UI
-    provider = st.selectbox("Choose LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
+with col1:
+    st.header("💬 AI Chat")
     
-    # Define model options grouped by category
-    all_model_options = {
-        "OpenAI": {
-            "Chat Completion Models": [
-                "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "o4-mini", "o3-mini", "o3",
-                "o1-mini", "o1-preview", "gpt-4o-mini", "gpt-4o-mini-2024-07-18",
-                "gpt-4o", "gpt-4o-2024-08-06", "gpt-4o-2024-05-13", "gpt-4-turbo",
-                "gpt-4-turbo-preview", "gpt-4-0125-preview", "gpt-4-1106-preview",
-                "gpt-3.5-turbo-1106", "gpt-3.5-turbo", "gpt-3.5-turbo-0301",
-                "gpt-3.5-turbo-0613", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-16k-0613",
-                "gpt-4", "gpt-4-0314", "gpt-4-0613", "gpt-4-32k", "gpt-4-32k-0314",
-                "gpt-4-32k-0613"
-            ],
-            "Vision Models": [
-                "gpt-4o", "gpt-4-turbo", "gpt-4-vision-preview"
-            ]
-        },
-        "Anthropic Claude": {
-            "Claude Models": [
-                "claude-3-opus-20240229",
-                "claude-3-haiku-20240307",
-            ]
-        }
+    # Chatbot UI
+    provider = st.selectbox("LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
+    
+    # Simplified model selection
+    models = {
+        "OpenAI": ["gpt-4o", "gpt-4-turbo", "gpt-3.5-turbo"],
+        "Anthropic Claude": ["claude-3-opus-20240229", "claude-3-haiku-20240307"]
     }
     
-    # API Key Input
-    api_key = st.text_input(
-        f"Enter {provider} API Key", 
-        type="password",
-        help=f"Get your key from {provider}'s website"
-    )
-    
-    # Model selection
-    selected_model = st.selectbox(
-        "Choose model",
-        [model for models in all_model_options[provider].values() for model in models]
-    )
-    
-    # Initialize chat history
+    selected_model = st.selectbox("Model", models[provider])
+    api_key = st.text_input("API Key", type="password")
+
+    # Chat history
     if "messages" not in st.session_state:
         st.session_state.messages = []
     
-    # Display chat messages
     for message in st.session_state.messages:
         with st.chat_message(message["role"]):
             st.markdown(message["content"])
     
-    # Chat input
-    if prompt := st.chat_input("Type your message here..."):
+    if prompt := st.chat_input("Type your message..."):
         if not api_key:
             st.warning("Please enter your API key")
             st.stop()
             
-        # Add user message to chat history
         st.session_state.messages.append({"role": "user", "content": prompt})
         
-        # Display user message
         with st.chat_message("user"):
             st.markdown(prompt)
         
-        # Call the LLM
         with st.chat_message("assistant"):
             with st.spinner("Thinking..."):
                 try:
@@ -126,9 +99,27 @@ with tab1:
                     )
                     
                 except Exception as e:
-                    st.error(f"Error calling API: {str(e)}")
+                    st.error(f"Error: {str(e)}")
 
-with tab2:
-    st.header("Virtual Machine Terminal")
-    html(xterm_html, height=450)
-    st.info("This is a mock terminal. Connect to a real VM backend by modifying the JavaScript in the code.")
+with col2:
+    st.header("🖥️ VM Terminal")
+    html(xterm_html, height=500)
+    st.caption("""
+    **Try these mock commands**:  
+    `ls` - List files  
+    `python --version` - Check Python  
+    `clear` - Reset terminal  
+    """)
+
+# CSS to make the terminal fill available space
+st.markdown("""
+<style>
+.st-emotion-cache-1v0mbdj {
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+.st-emotion-cache-1y4p8pa {
+    padding: 1.5rem;
+}
+</style>
+""", unsafe_allow_html=True)
