@@ -6,6 +6,7 @@ import base64
 from yaml.loader import SafeLoader
 import streamlit_authenticator as stauth
 from streamlit_authenticator.utilities import Hasher
+from streamlit.components.v1 import html
 
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
 st.title("Enki Workshop")
