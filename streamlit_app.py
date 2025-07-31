@@ -20,14 +20,14 @@ with st.sidebar:
     # API Key Input Fields
     openai_key = st.text_input(
         "OpenAI API Key", 
-        value=user_data['api_keys'].get('openai', ''), 
+        value="", 
         type="password",
         help="Get your key from https://platform.openai.com/account/api-keys"
     )
     
     anthropic_key = st.text_input(
         "Anthropic API Key", 
-        value=user_data['api_keys'].get('anthropic', ''), 
+        value="", 
         type="password",
         help="Get your key from https://console.anthropic.com/settings/keys"
     )
