@@ -11,10 +11,8 @@ from streamlit.components.v1 import html
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
 st.title("Enki Workshop")
 
-st.write(f'Welcome *{st.session_state["name"]}*')
 
 with st.sidebar:
-    authenticator.logout("Logout")
     st.write("---")
     st.header("🔑 API Key Management")
     
