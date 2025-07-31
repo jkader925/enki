@@ -16,14 +16,6 @@ with st.sidebar:
     st.write("---")
     st.header("🔑 API Key Management")
     
-    # Get current user's data
-    username = st.session_state["username"]
-    user_data = config['credentials']['usernames'].get(username, {})
-    
-    # Initialize API keys dictionary if it doesn't exist
-    if 'api_keys' not in user_data:
-        user_data['api_keys'] = {}
-        config['credentials']['usernames'][username]['api_keys'] = {}
     
     # API Key Input Fields
     openai_key = st.text_input(
