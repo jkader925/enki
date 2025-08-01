@@ -18,7 +18,20 @@ def get_vm_terminal_html(vm_host="localhost", vm_port=7681):
 <script src="https://unpkg.com/xterm-addon-fit@0.8.0/lib/xterm-addon-fit.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@xterm/addon-webgl@0.15.0/lib/xterm-addon-webgl.min.js"></script>
 
-<div id="terminal" style="width:100%; height:100%; background:#000; padding:10px"></div>
+<style>
+.terminal-container {{
+    width: 100%;
+    height: 65vh;  /* Fixed viewport height */
+    background: #000;
+    padding: 10px;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+}}
+</style>
+
+<div class="terminal-container">
+    <div id="terminal" style="width:100%; height:100%;"></div>
+</div>
 
 <script>
 const term = new Terminal({{
@@ -144,7 +157,7 @@ with col2:
             st.rerun()
     
     if st.session_state.vm_connected:
-        html(get_vm_terminal_html(vm_host, vm_port), height=500)
+        html(get_vm_terminal_html(vm_host, vm_port), height=650)
         st.caption("""
         **Connected to VM**  
         Type commands directly in the terminal  
@@ -152,28 +165,14 @@ with col2:
     else:
         st.warning("Configure and connect to VM")
 
-# JavaScript communication handler
-html("""
-<script>
-window.addEventListener('message', (event) => {
-    if (event.data.type === 'vm_status') {
-        window.parent.document.dispatchEvent(
-            new CustomEvent('setVmStatus', {detail: event.data.connected})
-        );
-    }
-});
-</script>
-""")
-
 # CSS styling
 st.markdown("""
 <style>
-.st-emotion-cache-1v0mbdj {
-    border-radius: 8px;
-    border: 1px solid rgba(255,255,255,0.1);
-}
 .st-emotion-cache-1y4p8pa {
     padding: 1.5rem;
+}
+.stChatFloatingInputContainer {
+    bottom: 20px;
 }
 </style>
 """, unsafe_allow_html=True)
