@@ -3,6 +3,17 @@ from litellm import completion
 from streamlit.components.v1 import html
 import json
 
+
+def noVNC_viewer(vnc_host="localhost", vnc_port=5901, password=None):
+    """Embed noVNC viewer in Streamlit"""
+    return f"""
+<div style="width:100%; height:65vh;">
+    <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&autoconnect=true&password={password or ''}"
+            style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
+            allowfullscreen>
+    </iframe>
+</div>
+"""
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
 st.title("Enki Workshop")
 
@@ -145,25 +156,15 @@ with col1:
                     st.error(f"Error: {str(e)}")
 
 with col2:
-    st.header("🖥️ VM Terminal")
+    st.header("🖥️ VM Desktop (VNC)")
     
-    # VM Connection Settings
-    with st.expander("Connection Settings", expanded=not st.session_state.vm_connected):
-        vm_host = st.text_input("VM Host", value="localhost")
-        vm_port = st.number_input("Port", value=7681, min_value=1, max_value=65535)
+    with st.expander("VNC Settings"):
+        vnc_host = st.text_input("VNC Host", value="localhost")
+        vnc_port = st.number_input("VNC Port", value=5901)
+        vnc_password = st.text_input("VNC Password", type="password")
         
-        if st.button("Connect" if not st.session_state.vm_connected else "Reconnect"):
-            st.session_state.vm_connected = True
-            st.rerun()
-    
-    if st.session_state.vm_connected:
-        html(get_vm_terminal_html(vm_host, vm_port), height=650)
-        st.caption("""
-        **Connected to VM**  
-        Type commands directly in the terminal  
-        """)
-    else:
-        st.warning("Configure and connect to VM")
+        if st.button("Connect VNC"):
+            html(noVNC_viewer(vnc_host, vnc_port, vnc_password), height=650)
 
 # CSS styling
 st.markdown("""
