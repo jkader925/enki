@@ -7,7 +7,7 @@ import json
 def noVNC_viewer(vnc_host, vnc_port, password):
     return f"""
 <div style="width:100%; height:65vh; position:relative;">
-    <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&path=websockify&autoconnect=true&password={password or ''}"
+    <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&autoconnect=true&password={password or ''}"
             style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
             allowfullscreen>
     </iframe>
@@ -16,36 +16,25 @@ def noVNC_viewer(vnc_host, vnc_port, password):
     </div>
 </div>
 <script>
+    // Simple connection monitoring
     const iframe = document.querySelector('iframe');
     iframe.onload = function() {{
         setTimeout(() => {{
             const statusEl = document.getElementById('vnc-status');
             try {{
-                // More robust connection checking
-                const consoleLogs = [];
-                const originalConsole = iframe.contentWindow.console.log;
-                iframe.contentWindow.console.log = function(message) {{
-                    consoleLogs.push(message);
-                    originalConsole.apply(this, arguments);
-                }};
-                
-                setTimeout(() => {{
-                    if (consoleLogs.some(msg => msg.includes('Connected'))) {{
-                        statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
-                        statusEl.style.background = 'rgba(0,255,0,0.7)';
-                    }} else if (consoleLogs.some(msg => msg.includes('failed'))) {{
-                        statusEl.innerHTML = `Authentication failed`;
-                        statusEl.style.background = 'rgba(255,0,0,0.7)';
-                    }} else {{
-                        statusEl.innerHTML = `Connection failed (check firewall/ports)`;
-                        statusEl.style.background = 'rgba(255,0,0,0.7)';
-                    }}
-                }}, 3000);
+                // Check if iframe content loaded successfully
+                if (iframe.contentWindow.document.body.innerHTML.includes('noVNC_screen')) {{
+                    statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
+                    statusEl.style.background = 'rgba(0,255,0,0.7)';
+                }} else {{
+                    statusEl.innerHTML = `Authentication failed - check password`;
+                    statusEl.style.background = 'rgba(255,0,0,0.7)';
+                }}
             }} catch (e) {{
-                statusEl.innerHTML = `Error: ${e.message}`;
+                statusEl.innerHTML = `Connection error - check host/port`;
                 statusEl.style.background = 'rgba(255,0,0,0.7)';
             }}
-        }}, 1000);
+        }}, 3000);
     }};
 </script>
 """
