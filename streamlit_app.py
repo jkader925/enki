@@ -3,6 +3,46 @@ from litellm import completion
 from streamlit.components.v1 import html
 import json
 
+CHAT_CSS = """
+<style>
+/* Fixed chat container */
+.chat-container {
+    height: 65vh;
+    overflow-y: auto;
+    padding: 15px;
+    background: #111827;
+    border-radius: 8px;
+    border: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 10px;
+}
+
+/* Message bubbles */
+.stChatMessage {
+    padding: 8px 12px;
+    margin: 8px 0;
+    border-radius: 12px;
+    max-width: 80%;
+}
+[data-testid="chatUserMessage"] {
+    background: #1e40af;
+    margin-left: auto;
+}
+[data-testid="chatAssistantMessage"] {
+    background: #374151;
+}
+
+/* Input area */
+.stTextInput>div>div>input {
+    color: white !important;
+}
+
+/* Remove extra padding */
+.st-emotion-cache-1y4p8pa {
+    padding: 1rem;
+}
+</style>
+"""
+
 
 def noVNC_viewer(vnc_host, vnc_port, password):
     return f"""
@@ -16,13 +56,11 @@ def noVNC_viewer(vnc_host, vnc_port, password):
     </div>
 </div>
 <script>
-    // Simple connection monitoring
     const iframe = document.querySelector('iframe');
     iframe.onload = function() {{
         setTimeout(() => {{
             const statusEl = document.getElementById('vnc-status');
             try {{
-                // Check if iframe content loaded successfully
                 if (iframe.contentWindow.document.body.innerHTML.includes('noVNC_screen')) {{
                     statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
                     statusEl.style.background = 'rgba(0,255,0,0.7)';
@@ -40,8 +78,10 @@ def noVNC_viewer(vnc_host, vnc_port, password):
 """
 
 
+
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
 st.title("Enki Workshop")
+st.markdown(CHAT_CSS, unsafe_allow_html=True)  # Add this line
 
 # ====================== Configuration ======================
 if 'vm_connected' not in st.session_state:
@@ -126,6 +166,9 @@ col1, col2 = st.columns([1, 1], gap="medium")
 with col1:
     st.header("💬 AI Chat")
     
+    # Chat container div
+    st.markdown('<div class="chat-container">', unsafe_allow_html=True)
+    
     # Chatbot UI
     provider = st.selectbox("LLM Provider", options=["OpenAI", "Anthropic Claude"], index=0)
     models = {
@@ -180,6 +223,8 @@ with col1:
                     
                 except Exception as e:
                     st.error(f"Error: {str(e)}")
+
+st.markdown('</div>', unsafe_allow_html=True)
 
 with col2:
     st.header("🖥️ VM Desktop (VNC)")
