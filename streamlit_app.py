@@ -4,25 +4,17 @@ from streamlit.components.v1 import html
 import json
 
 
-def noVNC_viewer(vnc_host="localhost", vnc_port=5901, password=None):
+def noVNC_viewer(vnc_host, vnc_port, password):
     return f"""
-<div style="width:100%; height:65vh; position:relative;">
-    <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&autoconnect=true&password={password or ''}"
-            style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
-            allowfullscreen>
-    </iframe>
-    <div id="vnc-status" style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.7); color:white; padding:5px; border-radius:4px;">
-        Connecting to {vnc_host}:{vnc_port}...
-    </div>
-</div>
+<div id="noVNC-container" style="width:100%;height:65vh;"></div>
+<script src="https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.min.js"></script>
 <script>
-    window.addEventListener('message', (e) => {{
-        if(e.data.type === 'noVNC_failed') {{
-            document.getElementById('vnc-status').innerHTML = 
-                `Connection failed to ${{e.data.host}}:${{e.data.port}}<br>Error: ${{e.data.error}}`;
-            document.getElementById('vnc-status').style.background = 'rgba(255,0,0,0.7)';
-        }}
-    }});
+const container = document.getElementById('noVNC-container');
+const rfb = new RFB(container, 'wss://{vnc_host}:{vnc_port}', {{
+    credentials: {{ password: '{password or ''}' }}
+}});
+rfb.addEventListener("connect", () => window.vncConnected = true);
+rfb.addEventListener("disconnect", () => window.vncConnected = false);
 </script>
 """
 
