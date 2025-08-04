@@ -7,81 +7,35 @@ import json
 def noVNC_viewer(vnc_host, vnc_port, password):
     return f"""
 <div style="width:100%; height:65vh; position:relative;">
-    <!-- Loading spinner -->
-    <div id="loading" style="position:absolute; top:50%; left:50%; transform:translate(-50%,-50%);">
-        <div style="border:5px solid #f3f3f3; border-top:5px solid #3498db; border-radius:50%; width:50px; height:50px; animation:spin 1s linear infinite;"></div>
-    </div>
-    
-    <div id="noVNC-container" style="width:100%; height:100%; display:none;"></div>
+    <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&autoconnect=true&password={password or ''}"
+            style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
+            allowfullscreen>
+    </iframe>
     <div id="vnc-status" style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.7); color:white; padding:5px; border-radius:4px;">
-        Initializing connection...
+        Connecting to {vnc_host}:{vnc_port}...
     </div>
 </div>
-
-<style>
-@keyframes spin {{
-    0% {{ transform: rotate(0deg); }}
-    100% {{ transform: rotate(360deg); }}
-}}
-</style>
-
 <script>
-// First load the noVNC library dynamically
-function loadScript(url, callback) {{
-    var script = document.createElement('script');
-    script.type = 'text/javascript';
-    script.src = url;
-    script.onload = callback;
-    document.head.appendChild(script);
-}}
-
-// Main connection function
-function connectVNC() {{
-    try {{
-        const container = document.getElementById('noVNC-container');
-        const statusEl = document.getElementById('vnc-status');
-        const loadingEl = document.getElementById('loading');
-        
-        // Show loading, hide container initially
-        loadingEl.style.display = 'block';
-        container.style.display = 'none';
-        
-        // Check if RFB is available
-        if (typeof RFB === 'undefined') {{
-            throw new Error('NoVNC library failed to load');
-        }}
-        
-        const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
-        const rfb = new RFB(
-            container,
-            protocol + '{vnc_host}:{vnc_port}/websockify',
-            {{
-                credentials: {{ password: '{password or ''}' }},
-                wsProtocols: ['binary']
+    // Simple connection monitoring
+    const iframe = document.querySelector('iframe');
+    iframe.onload = function() {{
+        setTimeout(() => {{
+            const statusEl = document.getElementById('vnc-status');
+            try {{
+                // Check if iframe content loaded successfully
+                if (iframe.contentWindow.document.body.innerHTML.includes('noVNC_screen')) {{
+                    statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
+                    statusEl.style.background = 'rgba(0,255,0,0.7)';
+                }} else {{
+                    statusEl.innerHTML = `Authentication failed - check password`;
+                    statusEl.style.background = 'rgba(255,0,0,0.7)';
+                }}
+            }} catch (e) {{
+                statusEl.innerHTML = `Connection error - check host/port`;
+                statusEl.style.background = 'rgba(255,0,0,0.7)';
             }}
-        );
-
-        rfb.addEventListener("connect", () => {{
-            loadingEl.style.display = 'none';
-            container.style.display = 'block';
-            statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
-            statusEl.style.background = 'rgba(0,255,0,0.7)';
-        }});
-
-        rfb.addEventListener("disconnect", (e) => {{
-            statusEl.innerHTML = `Disconnected: ${{e.detail.reason}}`;
-            statusEl.style.background = 'rgba(255,0,0,0.7)';
-        }});
-        
-    }} catch (error) {{
-        document.getElementById('loading').style.display = 'none';
-        document.getElementById('vnc-status').innerHTML = `Error: ${{error.message}}`;
-        console.error('VNC Error:', error);
-    }}
-}}
-
-// Load noVNC then initialize connection
-loadScript('https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.min.js', connectVNC);
+        }}, 3000);
+    }};
 </script>
 """
 
