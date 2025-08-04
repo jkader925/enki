@@ -164,8 +164,8 @@ with col2:
     st.header("🖥️ VM Desktop (VNC)")
     
     with st.expander("VNC Settings"):
-        vnc_host = st.text_input("VNC Host", value="localhost")
-        vnc_port = st.number_input("VNC Port", value=5901)
+        vnc_host = st.text_input("VNC Host", value="64.23.187.223")  # Your DO IP
+        vnc_port = st.number_input("VNC Port", value=6080)  # WebSocket port
         vnc_password = st.text_input("VNC Password", type="password")
         
         if st.button("Connect VNC"):
