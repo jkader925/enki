@@ -6,15 +6,38 @@ import json
 
 def noVNC_viewer(vnc_host, vnc_port, password):
     return f"""
-<div id="noVNC-container" style="width:100%;height:65vh;"></div>
+<div style="width:100%; height:65vh; position:relative;">
+    <div id="noVNC-container" style="width:100%; height:100%;"></div>
+    <div id="vnc-status" style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.7); color:white; padding:5px; border-radius:4px;">
+        Connecting to {vnc_host}:{vnc_port}...
+    </div>
+</div>
 <script src="https://cdn.jsdelivr.net/npm/@novnc/novnc@1.4.0/core/rfb.min.js"></script>
 <script>
-const container = document.getElementById('noVNC-container');
-const rfb = new RFB(container, 'wss://{vnc_host}:{vnc_port}', {{
-    credentials: {{ password: '{password or ''}' }}
-}});
-rfb.addEventListener("connect", () => window.vncConnected = true);
-rfb.addEventListener("disconnect", () => window.vncConnected = false);
+try {{
+    const container = document.getElementById('noVNC-container');
+    const statusEl = document.getElementById('vnc-status');
+    
+    // Use 'ws://' for HTTP or 'wss://' for HTTPS
+    const protocol = window.location.protocol === 'https:' ? 'wss://' : 'ws://';
+    const rfb = new RFB(container, protocol + '{vnc_host}:{vnc_port}/websockify', {{
+        credentials: {{ password: '{password or ''}' }},
+        wsProtocols: ['binary']
+    }});
+
+    rfb.addEventListener("connect", () => {{
+        statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
+        statusEl.style.background = 'rgba(0,255,0,0.7)';
+    }});
+
+    rfb.addEventListener("disconnect", (e) => {{
+        statusEl.innerHTML = `Disconnected: ${{e.detail.reason}}`;
+        statusEl.style.background = 'rgba(255,0,0,0.7)';
+    }});
+}} catch (error) {{
+    document.getElementById('vnc-status').innerHTML = `Error: ${{error.message}}`;
+    console.error(error);
+}}
 </script>
 """
 
