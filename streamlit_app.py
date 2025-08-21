@@ -55,8 +55,6 @@ def noVNC_viewer():
     """
 
 
-
-
 st.set_page_config(page_title="💬 Enki Chatbot", layout="wide")
 st.title("Enki Workshop")
 st.markdown(CHAT_CSS, unsafe_allow_html=True)  # Add this line
@@ -213,7 +211,7 @@ with col2:
         vnc_password = st.text_input("VNC Password", type="password")
         
         if st.button("Connect VNC"):
-            html(noVNC_viewer(vnc_host, vnc_port, vnc_password), height=650)
+            html(noVNC_viewer(), height=650)  # REMOVED THE PARAMETERS
 
 # CSS styling
 st.markdown("""
