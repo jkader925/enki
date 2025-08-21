@@ -44,8 +44,15 @@ CHAT_CSS = """
 """
 
 
-def noVNC_viewer(vnc_host, vnc_port, password):
-    return f"""
+def noVNC_viewer():
+    return """
+    <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:8px;">
+        <iframe src="http://localhost:6080/vnc.html?autoconnect=true&resize=scale"
+                style="width:100%; height:100%; border:none;"
+                allowfullscreen>
+        </iframe>
+    </div>
+    """
 <div style="width:100%; height:65vh; position:relative;">
     <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&autoconnect=true&password={password or ''}"
             style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
