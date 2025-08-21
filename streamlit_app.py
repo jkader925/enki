@@ -53,36 +53,7 @@ def noVNC_viewer():
         </iframe>
     </div>
     """
-<div style="width:100%; height:65vh; position:relative;">
-    <iframe src="https://novnc.com/noVNC/vnc.html?host={vnc_host}&port={vnc_port}&autoconnect=true&password={password or ''}"
-            style="width:100%; height:100%; border:1px solid #ccc; border-radius:8px;"
-            allowfullscreen>
-    </iframe>
-    <div id="vnc-status" style="position:absolute; bottom:10px; left:10px; background:rgba(0,0,0,0.7); color:white; padding:5px; border-radius:4px;">
-        Connecting to {vnc_host}:{vnc_port}...
-    </div>
-</div>
-<script>
-    const iframe = document.querySelector('iframe');
-    iframe.onload = function() {{
-        setTimeout(() => {{
-            const statusEl = document.getElementById('vnc-status');
-            try {{
-                if (iframe.contentWindow.document.body.innerHTML.includes('noVNC_screen')) {{
-                    statusEl.innerHTML = `Connected to {vnc_host}:{vnc_port}`;
-                    statusEl.style.background = 'rgba(0,255,0,0.7)';
-                }} else {{
-                    statusEl.innerHTML = `Authentication failed - check password`;
-                    statusEl.style.background = 'rgba(255,0,0,0.7)';
-                }}
-            }} catch (e) {{
-                statusEl.innerHTML = `Connection error - check host/port`;
-                statusEl.style.background = 'rgba(255,0,0,0.7)';
-            }}
-        }}, 3000);
-    }};
-</script>
-"""
+
 
 
 
