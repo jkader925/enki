@@ -45,10 +45,9 @@ CHAT_CSS = """
 
 
 def noVNC_viewer():
-    # Change localhost to your VNC droplet's public IP
     return """
     <div style="width:100%; height:600px; border:1px solid #ccc; border-radius:8px;">
-        <iframe src="http://64.23.187.223:6080/vnc.html?autoconnect=true&resize=scale"
+        <iframe src="http://64.23.239.222:6080/vnc.html?autoconnect=true&resize=scale"
                 style="width:100%; height:100%; border:none;"
                 allowfullscreen>
         </iframe>
